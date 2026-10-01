@@ -286,6 +286,7 @@ export default function PlataformaPage() {
         isOpen={isProfileModalOpen}
         onClose={() => setIsProfileModalOpen(false)}
         onSave={handleUpdateProfile}
+        stellarAddress={publicKey}
       />
 
       <WalletDrawer
