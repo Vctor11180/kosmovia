@@ -42,19 +42,19 @@ export const en: Content = {
     },
     {
       title: "Payments inside the community",
-      stage: "B",
+      stage: "C",
       text: "Sell event tickets with a QR at the door, run pools and send money by @username.",
     },
     {
       title: "Verified businesses",
-      stage: "C",
+      stage: "D",
       text: "Banks, fintechs, car dealers and real estate agencies get verified and open their own communities to reach users and builders.",
     },
   ],
   roadmap: {
     title: "How we get there",
     intro:
-      "Bolivia first, then the world. Wallet, payments and verified businesses come first, in 2026; the rest follows in 2027.",
+      "Bolivia first, then the world. Communities, the wallet, Explore, payments and verified businesses come first, in 2026; the rest follows in 2027.",
     nowLabel: "now",
     stages: [
       {
@@ -66,23 +66,24 @@ export const en: Content = {
       },
       {
         key: "B",
-        name: "B · Payments",
-        what: "Event tickets with QR, pools, send by @username",
-        when: "Oct – Nov 2026",
+        name: "B · Explore",
+        what: "Discover communities, profiles and what's happening now",
+        when: "Oct 2026",
         soon: true,
       },
       {
         key: "C",
-        name: "C · Verified businesses",
-        what: "Business verification (KYC), company communities, API connections",
-        when: "Nov – Dec 2026",
+        name: "C · Payments",
+        what: "Event tickets with QR, pools, send by @username",
+        when: "Nov 2026",
         soon: true,
       },
       {
         key: "D",
-        name: "D · Feed",
-        what: "Posts, follows, Home and Explore",
-        when: "2027",
+        name: "D · Verified businesses",
+        what: "Business verification (KYC), company communities, API connections",
+        when: "Dec 2026",
+        soon: true,
       },
       {
         key: "E",
@@ -130,19 +131,19 @@ export const es: Content = {
     },
     {
       title: "Pagos dentro de la comunidad",
-      stage: "B",
+      stage: "C",
       text: "Vende entradas con QR para la puerta, organiza colectas y envía dinero por @usuario.",
     },
     {
       title: "Empresas verificadas",
-      stage: "C",
+      stage: "D",
       text: "Bancos, fintechs, concesionarias e inmobiliarias se verifican y abren sus propias comunidades para llegar a usuarios y builders.",
     },
   ],
   roadmap: {
     title: "Cómo llegamos",
     intro:
-      "Primero Bolivia, después el mundo. La wallet, los pagos y las empresas verificadas van primero, en 2026; lo demás sigue en 2027.",
+      "Primero Bolivia, después el mundo. Las comunidades, la wallet, Explorar, los pagos y las empresas verificadas van primero, en 2026; lo demás sigue en 2027.",
     nowLabel: "ahora",
     stages: [
       {
@@ -154,23 +155,24 @@ export const es: Content = {
       },
       {
         key: "B",
-        name: "B · Pagos",
-        what: "Entradas con QR, colectas, envíos por @usuario",
-        when: "Oct – Nov 2026",
+        name: "B · Explorar",
+        what: "Descubre comunidades, perfiles y lo que está pasando ahora",
+        when: "Oct 2026",
         soon: true,
       },
       {
         key: "C",
-        name: "C · Empresas verificadas",
-        what: "Verificación de empresas (KYC), comunidades de empresas, conexión por API",
-        when: "Nov – Dic 2026",
+        name: "C · Pagos",
+        what: "Entradas con QR, colectas, envíos por @usuario",
+        when: "Nov 2026",
         soon: true,
       },
       {
         key: "D",
-        name: "D · Muro",
-        what: "Publicaciones, seguidores, Inicio y Explorar",
-        when: "2027",
+        name: "D · Empresas verificadas",
+        what: "Verificación de empresas (KYC), comunidades de empresas, conexión por API",
+        when: "Dic 2026",
+        soon: true,
       },
       {
         key: "E",
