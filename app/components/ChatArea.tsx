@@ -13,6 +13,10 @@ interface ChatAreaProps {
   isMemberListOpen?: boolean;
   onOpenWallet?: () => void;
   balanceUSDC?: number;
+  theme?: 'dark' | 'light';
+  onToggleTheme?: () => void;
+  onOpenQuickInvoice?: () => void;
+  onPayInvoice?: (amount: number, concept: string) => void;
 }
 
 export function ChatArea({
@@ -25,8 +29,13 @@ export function ChatArea({
   isMemberListOpen,
   onOpenWallet,
   balanceUSDC,
+  theme = 'dark',
+  onToggleTheme,
+  onOpenQuickInvoice,
+  onPayInvoice,
 }: ChatAreaProps) {
   const [inputText, setInputText] = useState('');
+  const [paidInvoices, setPaidInvoices] = useState<Record<string, boolean>>({});
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -39,6 +48,14 @@ export function ChatArea({
     if (!trimmed) return;
     onSendMessage(trimmed);
     setInputText('');
+  };
+
+  const handlePay = (msgId: string, amount: number, concept: string) => {
+    if (paidInvoices[msgId]) return;
+    setPaidInvoices((prev) => ({ ...prev, [msgId]: true }));
+    if (onPayInvoice) {
+      onPayInvoice(amount, concept);
+    }
   };
 
   return (
@@ -73,7 +90,20 @@ export function ChatArea({
               <span>{balanceUSDC !== undefined ? balanceUSDC.toFixed(2) : '150.00'} USDC</span>
             </button>
           )}
+
+          {onToggleTheme && (
+            <button
+              type="button"
+              className="header-icon-btn"
+              onClick={onToggleTheme}
+              title={theme === 'light' ? 'Cambiar a Modo Oscuro' : 'Cambiar a Modo Claro'}
+            >
+              {theme === 'light' ? '🌙' : '☀️'}
+            </button>
+          )}
+
           <div className="header-badge">{community.name}</div>
+
           {onToggleMemberList && (
             <button
               type="button"
@@ -88,32 +118,77 @@ export function ChatArea({
       </header>
 
       <section className="message-feed" aria-label="Historial de mensajes">
-        {messages.map((msg) => (
-          <article key={msg.id} className="message-item">
-            <div className="msg-avatar">
-              {msg.author.displayName.charAt(0)}
-            </div>
-            <div className="msg-body">
-              <div className="msg-header">
-                <span className="msg-author">{msg.author.displayName}</span>
-                {msg.author.role && (
-                  <span className="msg-role-tag">{msg.author.role}</span>
-                )}
-                <time className="msg-time">{msg.createdAt}</time>
+        {messages.map((msg) => {
+          // Detectar si el mensaje es una tarjeta de cobro B2B interactiva
+          const isInvoice = msg.content.startsWith('[COBRO_B2B:');
+          let invoiceData: { amount: number; concept: string } | null = null;
+          if (isInvoice) {
+            try {
+              const raw = msg.content.replace('[COBRO_B2B:', '').replace(']', '');
+              invoiceData = JSON.parse(raw);
+            } catch {
+              invoiceData = null;
+            }
+          }
+
+          const isPaid = paidInvoices[msg.id];
+
+          return (
+            <article key={msg.id} className="message-item">
+              <div className="msg-avatar">
+                {msg.author.displayName.charAt(0)}
               </div>
-              <p className="msg-content">{msg.content}</p>
-            </div>
-          </article>
-        ))}
+              <div className="msg-body">
+                <div className="msg-header">
+                  <span className="msg-author">{msg.author.displayName}</span>
+                  {msg.author.role && (
+                    <span className={`msg-role-tag ${msg.author.role}`}>{msg.author.role}</span>
+                  )}
+                  <time className="msg-time">{msg.createdAt}</time>
+                </div>
+
+                {invoiceData ? (
+                  <div className="invoice-card">
+                    <div className="invoice-header-row">
+                      <span className="invoice-tag">Cobro en Stellar</span>
+                      <span className="invoice-amount-text">{invoiceData.amount} USDC</span>
+                    </div>
+                    <p className="invoice-concept">{invoiceData.concept}</p>
+                    <button
+                      type="button"
+                      className={`btn-pay-invoice ${isPaid ? 'paid' : ''}`}
+                      onClick={() => invoiceData && handlePay(msg.id, invoiceData.amount, invoiceData.concept)}
+                      disabled={isPaid}
+                    >
+                      {isPaid ? '✓ Pago Confirmado en Testnet' : `Pagar ${invoiceData.amount} USDC`}
+                    </button>
+                  </div>
+                ) : (
+                  <p className="msg-content">{msg.content}</p>
+                )}
+              </div>
+            </article>
+          );
+        })}
         <div ref={messagesEndRef} />
       </section>
 
       <footer className="chat-input-container">
         <form onSubmit={handleSubmit} className="chat-input-box">
+          {onOpenQuickInvoice && (
+            <button
+              type="button"
+              className="btn-quick-tip"
+              onClick={onOpenQuickInvoice}
+              title="Emitir solicitud de cobro B2B en USDC"
+            >
+              💸
+            </button>
+          )}
           <input
             type="text"
             className="chat-input-field"
-            placeholder={`Enviar mensaje a #${channel.name}...`}
+            placeholder={`Enviar mensaje a #${channel.name}... (o usa 💸 para emitir un cobro)`}
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
           />

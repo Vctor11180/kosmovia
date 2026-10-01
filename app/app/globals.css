@@ -17,6 +17,30 @@
   --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
+[data-theme="light"] {
+  --bg: #f8fafc;
+  --surface: #ffffff;
+  --surface-alt: #f1f5f9;
+  --surface-hover: #e2e8f0;
+  --surface-active: #cbd5e1;
+  --fg: #0f172a;
+  --muted: #64748b;
+  --line: #e2e8f0;
+  --accent: #0099a8;
+  --accent-hover: #007a87;
+  --accent-dark: #005c66;
+  --accent-glow: rgba(0, 153, 168, 0.2);
+  --online: #0d9488;
+  --kyc-verified: #059669;
+  --kyc-pending: #d97706;
+}
+
+[data-theme="light"] .app-container {
+  background:
+    radial-gradient(1200px 600px at 80% -10%, #e0f2fe 0%, transparent 70%),
+    var(--bg);
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
@@ -144,13 +168,37 @@ html, body {
   gap: 4px;
 }
 
+.channel-category-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 8px 4px;
+}
+
 .channel-category-label {
   font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--muted);
-  padding: 8px 8px 4px;
+  padding: 0;
+}
+
+.btn-add-channel {
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+}
+
+.btn-add-channel:hover {
+  color: var(--accent);
+  background: var(--surface-hover);
 }
 
 .channel-item-btn {
@@ -441,6 +489,90 @@ html, body {
 .chat-send-btn:disabled {
   opacity: 0.4;
   cursor: not-allowed;
+  transform: none;
+}
+
+.btn-quick-tip {
+  background: transparent;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.btn-quick-tip:hover {
+  background: rgba(0, 242, 254, 0.15);
+  transform: scale(1.15);
+}
+
+.invoice-card {
+  background: linear-gradient(135deg, rgba(0, 242, 254, 0.1) 0%, rgba(10, 17, 26, 0.95) 100%);
+  border: 1px solid rgba(0, 242, 254, 0.35);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 360px;
+}
+
+.invoice-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.invoice-tag {
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: var(--accent);
+  color: #05080c;
+}
+
+.invoice-amount-text {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--fg);
+}
+
+.invoice-concept {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.btn-pay-invoice {
+  background: var(--accent);
+  color: #05080c;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  align-self: flex-start;
+  transition: all 0.15s ease;
+}
+
+.btn-pay-invoice:hover {
+  background: var(--accent-hover);
+  transform: translateY(-1px);
+}
+
+.btn-pay-invoice.paid {
+  background: rgba(16, 185, 129, 0.2);
+  border: 1px solid #10b981;
+  color: #34d399;
+  cursor: default;
   transform: none;
 }
 

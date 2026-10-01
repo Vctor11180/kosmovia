@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { CommunityBar } from '../../components/CommunityBar';
 import { ChannelList } from '../../components/ChannelList';
@@ -8,7 +8,9 @@ import { ChatArea } from '../../components/ChatArea';
 import { MemberList } from '../../components/MemberList';
 import { ProfileModal } from '../../components/ProfileModal';
 import { WalletDrawer } from '../../components/WalletDrawer';
-import { Community, Message, User, WalletTransaction } from '../../types';
+import { CreateChannelModal } from '../../components/CreateChannelModal';
+import { QuickInvoiceModal } from '../../components/QuickInvoiceModal';
+import { Channel, Community, Message, User, WalletTransaction } from '../../types';
 
 const INITIAL_USER: User = {
   id: 'usr-1',
@@ -152,7 +154,7 @@ const INITIAL_MESSAGES: Record<string, Message[]> = {
 
 export default function PlataformaPage() {
   const [currentUser, setCurrentUser] = useState<User>(INITIAL_USER);
-  const [communities] = useState<Community[]>(INITIAL_COMMUNITIES);
+  const [communities, setCommunities] = useState<Community[]>(INITIAL_COMMUNITIES);
   const [activeCommunityId, setActiveCommunityId] = useState<string>('comm-1');
   const [activeChannelId, setActiveChannelId] = useState<string>('chan-1');
   const [messagesByChannel, setMessagesByChannel] = useState<Record<string, Message[]>>(INITIAL_MESSAGES);
@@ -160,12 +162,30 @@ export default function PlataformaPage() {
   const [isMemberListOpen, setIsMemberListOpen] = useState<boolean>(true);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState<boolean>(false);
 
+  // Tema Claro / Oscuro (Turquesa + Negro/Blanco)
+  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+
+  // Modales de creación de canal y cobro B2B
+  const [isCreateChannelOpen, setIsCreateChannelOpen] = useState<boolean>(false);
+  const [isQuickInvoiceOpen, setIsQuickInvoiceOpen] = useState<boolean>(false);
+
   // Estados de Billetera Stellar
   const [isWalletOpen, setIsWalletOpen] = useState<boolean>(false);
   const [balanceUSDC, setBalanceUSDC] = useState<number>(185.0);
   const [balanceXLM] = useState<number>(42.8);
   const [publicKey] = useState<string>('GD26UBYVEYYVVOVCMOLPMIKPWQRFV34LK3I7LHBNTUGYHYIKFMEREH2A');
   const [transactions, setTransactions] = useState<WalletTransaction[]>(INITIAL_TRANSACTIONS);
+
+  // Sincronizar tema con atributo en documentElement
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      document.documentElement.setAttribute('data-theme', theme);
+    }
+  }, [theme]);
+
+  const handleToggleTheme = () => {
+    setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
+  };
 
   const activeCommunity = communities.find((c) => c.id === activeCommunityId) || communities[0];
   const activeChannel = activeCommunity.channels.find((ch) => ch.id === activeChannelId) || activeCommunity.channels[0];
@@ -198,6 +218,73 @@ export default function PlataformaPage() {
     }));
   };
 
+  const handleCreateChannel = (name: string, topic: string) => {
+    const newChannel: Channel = {
+      id: `chan-${Date.now()}`,
+      communityId: activeCommunity.id,
+      name,
+      topic: topic || 'Canal creado por la comunidad',
+      type: 'text',
+    };
+
+    setCommunities((prev) =>
+      prev.map((c) =>
+        c.id === activeCommunity.id
+          ? { ...c, channels: [...c.channels, newChannel] }
+          : c
+      )
+    );
+
+    setActiveChannelId(newChannel.id);
+
+    const welcomeMsg: Message = {
+      id: `m-init-${Date.now()}`,
+      channelId: newChannel.id,
+      author: currentUser,
+      content: `🎉 Canal #${name} creado con éxito. ¡Inicia la conversación!`,
+      createdAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    };
+
+    setMessagesByChannel((prev) => ({
+      ...prev,
+      [newChannel.id]: [welcomeMsg],
+    }));
+  };
+
+  const handleCreateInvoice = (amount: number, concept: string) => {
+    const payload = JSON.stringify({ amount, concept });
+    handleSendMessage(`[COBRO_B2B:${payload}]`);
+  };
+
+  const handlePayInvoice = (amount: number, concept: string) => {
+    setBalanceUSDC((prev) => Math.max(0, prev - amount));
+
+    const newTx: WalletTransaction = {
+      id: `tx-${Date.now()}`,
+      type: 'sent',
+      counterparty: `#${activeChannel.name}`,
+      amount,
+      asset: 'USDC',
+      timestamp: 'Ahora mismo',
+      hash: '6be268a284eee59916485c32eadc2d89d092c1b14c60443969cb504996147181',
+    };
+
+    setTransactions((prev) => [newTx, ...prev]);
+
+    const paidMsg: Message = {
+      id: `m-pay-inv-${Date.now()}`,
+      channelId: activeChannel.id,
+      author: currentUser,
+      content: `✅ Cobro saldado: ${amount} USDC por "${concept}". Transacción confirmada en Stellar Testnet.`,
+      createdAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    };
+
+    setMessagesByChannel((prev) => ({
+      ...prev,
+      [activeChannel.id]: [...(prev[activeChannel.id] || []), paidMsg],
+    }));
+  };
+
   const handleUpdateProfile = (updated: { displayName: string; bio: string }) => {
     setCurrentUser((prev) => ({
       ...prev,
@@ -223,7 +310,6 @@ export default function PlataformaPage() {
 
     setTransactions((prev) => [newTx, ...prev]);
 
-    // Enviar mensaje de confirmación de pago en el canal de chat actual
     const paymentMsg: Message = {
       id: `m-pay-${Date.now()}`,
       channelId: activeChannel.id,
@@ -262,6 +348,7 @@ export default function PlataformaPage() {
         onSelectChannel={handleSelectChannel}
         currentUser={currentUser}
         onOpenProfile={() => setIsProfileModalOpen(true)}
+        onOpenCreateChannel={() => setIsCreateChannelOpen(true)}
       />
 
       <ChatArea
@@ -274,6 +361,10 @@ export default function PlataformaPage() {
         isMemberListOpen={isMemberListOpen}
         onOpenWallet={() => setIsWalletOpen(true)}
         balanceUSDC={balanceUSDC}
+        theme={theme}
+        onToggleTheme={handleToggleTheme}
+        onOpenQuickInvoice={() => setIsQuickInvoiceOpen(true)}
+        onPayInvoice={handlePayInvoice}
       />
 
       <MemberList
@@ -297,6 +388,18 @@ export default function PlataformaPage() {
         publicKey={publicKey}
         transactions={transactions}
         onSend={handleSendPayment}
+      />
+
+      <CreateChannelModal
+        isOpen={isCreateChannelOpen}
+        onClose={() => setIsCreateChannelOpen(false)}
+        onCreate={handleCreateChannel}
+      />
+
+      <QuickInvoiceModal
+        isOpen={isQuickInvoiceOpen}
+        onClose={() => setIsQuickInvoiceOpen(false)}
+        onSubmit={handleCreateInvoice}
       />
     </div>
   );

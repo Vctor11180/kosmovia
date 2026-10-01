@@ -9,6 +9,7 @@ interface ChannelListProps {
   onSelectChannel: (id: string) => void;
   currentUser: User;
   onOpenProfile?: () => void;
+  onOpenCreateChannel?: () => void;
 }
 
 export function ChannelList({
@@ -17,6 +18,7 @@ export function ChannelList({
   onSelectChannel,
   currentUser,
   onOpenProfile,
+  onOpenCreateChannel,
 }: ChannelListProps) {
   return (
     <aside className="channel-sidebar" aria-label="Canales">
@@ -25,7 +27,19 @@ export function ChannelList({
       </div>
 
       <div className="channel-list-scroll">
-        <span className="channel-category-label">Canales de Texto</span>
+        <div className="channel-category-row">
+          <span className="channel-category-label">Canales de Texto</span>
+          {onOpenCreateChannel && (
+            <button
+              type="button"
+              className="btn-add-channel"
+              onClick={onOpenCreateChannel}
+              title="Crear un canal nuevo"
+            >
+              +
+            </button>
+          )}
+        </div>
         {community.channels.map((channel) => {
           const isActive = channel.id === activeChannelId;
           return (
