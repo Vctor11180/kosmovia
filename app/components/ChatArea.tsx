@@ -11,6 +11,8 @@ interface ChatAreaProps {
   onToggleMobileMenu: () => void;
   onToggleMemberList?: () => void;
   isMemberListOpen?: boolean;
+  onOpenWallet?: () => void;
+  balanceUSDC?: number;
 }
 
 export function ChatArea({
@@ -21,6 +23,8 @@ export function ChatArea({
   onToggleMobileMenu,
   onToggleMemberList,
   isMemberListOpen,
+  onOpenWallet,
+  balanceUSDC,
 }: ChatAreaProps) {
   const [inputText, setInputText] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -58,6 +62,17 @@ export function ChatArea({
           )}
         </div>
         <div className="chat-header-actions">
+          {onOpenWallet && (
+            <button
+              type="button"
+              className="header-wallet-pill"
+              onClick={onOpenWallet}
+              title="Abrir Billetera Stellar"
+            >
+              <span className="wallet-dot" />
+              <span>{balanceUSDC !== undefined ? balanceUSDC.toFixed(2) : '150.00'} USDC</span>
+            </button>
+          )}
           <div className="header-badge">{community.name}</div>
           {onToggleMemberList && (
             <button

@@ -7,7 +7,8 @@ import { ChannelList } from '../../components/ChannelList';
 import { ChatArea } from '../../components/ChatArea';
 import { MemberList } from '../../components/MemberList';
 import { ProfileModal } from '../../components/ProfileModal';
-import { Community, Message, User } from '../../types';
+import { WalletDrawer } from '../../components/WalletDrawer';
+import { Community, Message, User, WalletTransaction } from '../../types';
 
 const INITIAL_USER: User = {
   id: 'usr-1',
@@ -95,6 +96,27 @@ const INITIAL_COMMUNITIES: Community[] = [
   },
 ];
 
+const INITIAL_TRANSACTIONS: WalletTransaction[] = [
+  {
+    id: 'tx-1',
+    type: 'received',
+    counterparty: '@alejandro',
+    amount: 50,
+    asset: 'USDC',
+    timestamp: 'Hace 2 horas',
+    hash: '6be268a284eee59916485c32eadc2d89d092c1b14c60443969cb504996147181',
+  },
+  {
+    id: 'tx-2',
+    type: 'sent',
+    counterparty: '@roberto',
+    amount: 15,
+    asset: 'USDC',
+    timestamp: 'Ayer',
+    hash: '8f73b9e82047d2fka912837bc9910248cba00184719283746192837465910293',
+  },
+];
+
 const INITIAL_MESSAGES: Record<string, Message[]> = {
   'chan-1': [
     {
@@ -138,6 +160,13 @@ export default function PlataformaPage() {
   const [isMemberListOpen, setIsMemberListOpen] = useState<boolean>(true);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState<boolean>(false);
 
+  // Estados de Billetera Stellar
+  const [isWalletOpen, setIsWalletOpen] = useState<boolean>(false);
+  const [balanceUSDC, setBalanceUSDC] = useState<number>(185.0);
+  const [balanceXLM] = useState<number>(42.8);
+  const [publicKey] = useState<string>('GD26UBYVEYYVVOVCMOLPMIKPWQRFV34LK3I7LHBNTUGYHYIKFMEREH2A');
+  const [transactions, setTransactions] = useState<WalletTransaction[]>(INITIAL_TRANSACTIONS);
+
   const activeCommunity = communities.find((c) => c.id === activeCommunityId) || communities[0];
   const activeChannel = activeCommunity.channels.find((ch) => ch.id === activeChannelId) || activeCommunity.channels[0];
 
@@ -177,6 +206,38 @@ export default function PlataformaPage() {
     }));
   };
 
+  const handleSendPayment = (to: string, amount: number, asset: 'USDC' | 'XLM') => {
+    if (asset === 'USDC') {
+      setBalanceUSDC((prev) => Math.max(0, prev - amount));
+    }
+
+    const newTx: WalletTransaction = {
+      id: `tx-${Date.now()}`,
+      type: 'sent',
+      counterparty: to,
+      amount,
+      asset,
+      timestamp: 'Ahora mismo',
+      hash: '6be268a284eee59916485c32eadc2d89d092c1b14c60443969cb504996147181',
+    };
+
+    setTransactions((prev) => [newTx, ...prev]);
+
+    // Enviar mensaje de confirmación de pago en el canal de chat actual
+    const paymentMsg: Message = {
+      id: `m-pay-${Date.now()}`,
+      channelId: activeChannel.id,
+      author: currentUser,
+      content: `💸 He transferido ${amount} ${asset} a ${to} mediante Stellar Testnet (Tx verificada).`,
+      createdAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    };
+
+    setMessagesByChannel((prev) => ({
+      ...prev,
+      [activeChannel.id]: [...(prev[activeChannel.id] || []), paymentMsg],
+    }));
+  };
+
   const currentMembers = (activeCommunity.members || []).map((m) =>
     m.id === currentUser.id ? { ...m, ...currentUser } : m
   );
@@ -211,6 +272,8 @@ export default function PlataformaPage() {
         onToggleMobileMenu={() => setIsMobileOpen((prev) => !prev)}
         onToggleMemberList={() => setIsMemberListOpen((prev) => !prev)}
         isMemberListOpen={isMemberListOpen}
+        onOpenWallet={() => setIsWalletOpen(true)}
+        balanceUSDC={balanceUSDC}
       />
 
       <MemberList
@@ -223,6 +286,16 @@ export default function PlataformaPage() {
         isOpen={isProfileModalOpen}
         onClose={() => setIsProfileModalOpen(false)}
         onSave={handleUpdateProfile}
+      />
+
+      <WalletDrawer
+        isOpen={isWalletOpen}
+        onClose={() => setIsWalletOpen(false)}
+        balanceUSDC={balanceUSDC}
+        balanceXLM={balanceXLM}
+        publicKey={publicKey}
+        transactions={transactions}
+        onSend={handleSendPayment}
       />
     </div>
   );

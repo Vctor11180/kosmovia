@@ -34,3 +34,14 @@ export interface Message {
   content: string;
   createdAt: string;
 }
+
+export interface WalletTransaction {
+  id: string;
+  type: 'sent' | 'received';
+  counterparty: string; // e.g. "@roberto"
+  amount: number;
+  asset: 'USDC' | 'XLM';
+  timestamp: string;
+  hash: string;
+}
+
