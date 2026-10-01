@@ -41,9 +41,9 @@ export const en: Content = {
       text: "Sign in with Google or email and your USDC wallet is ready. No seed phrases, no extensions, fees covered.",
     },
     {
-      title: "Payments inside the community",
+      title: "Payments and transfers",
       stage: "C",
-      text: "Sell event tickets with a QR at the door, run pools and send money by @username.",
+      text: "Send money by @username, get paid with a link or QR, and close deals with escrow contracts.",
     },
     {
       title: "Verified businesses",
@@ -54,7 +54,7 @@ export const en: Content = {
   roadmap: {
     title: "How we get there",
     intro:
-      "Bolivia first, then the world. Communities, the wallet, Explore, payments and verified businesses come first, in 2026; the rest follows in 2027.",
+      "Bolivia first, then the world. Communities, the wallet, Explore, payments and verified businesses all arrive in October 2026; the rest follows in 2027.",
     nowLabel: "now",
     stages: [
       {
@@ -74,15 +74,15 @@ export const en: Content = {
       {
         key: "C",
         name: "C · Payments",
-        what: "Event tickets with QR, pools, send by @username",
-        when: "Nov 2026",
+        what: "Send and request money by @username, community payments, escrow and split contracts",
+        when: "Oct 2026",
         soon: true,
       },
       {
         key: "D",
         name: "D · Verified businesses",
         what: "Business verification (KYC), company communities, API connections",
-        when: "Dec 2026",
+        when: "Oct 2026",
         soon: true,
       },
       {
@@ -130,9 +130,9 @@ export const es: Content = {
       text: "Entra con Google o email y tu wallet en USDC ya está lista. Sin frases semilla, sin extensiones y sin pagar comisiones.",
     },
     {
-      title: "Pagos dentro de la comunidad",
+      title: "Pagos y envíos",
       stage: "C",
-      text: "Vende entradas con QR para la puerta, organiza colectas y envía dinero por @usuario.",
+      text: "Envía dinero por @usuario, cobra con un link o QR y cierra tratos con contratos de garantía.",
     },
     {
       title: "Empresas verificadas",
@@ -143,7 +143,7 @@ export const es: Content = {
   roadmap: {
     title: "Cómo llegamos",
     intro:
-      "Primero Bolivia, después el mundo. Las comunidades, la wallet, Explorar, los pagos y las empresas verificadas van primero, en 2026; lo demás sigue en 2027.",
+      "Primero Bolivia, después el mundo. Las comunidades, la wallet, Explorar, los pagos y las empresas verificadas llegan en octubre de 2026; lo demás sigue en 2027.",
     nowLabel: "ahora",
     stages: [
       {
@@ -163,15 +163,15 @@ export const es: Content = {
       {
         key: "C",
         name: "C · Pagos",
-        what: "Entradas con QR, colectas, envíos por @usuario",
-        when: "Nov 2026",
+        what: "Envíos y cobros por @usuario, pagos en comunidades, contratos de garantía y pagos divididos",
+        when: "Oct 2026",
         soon: true,
       },
       {
         key: "D",
         name: "D · Empresas verificadas",
         what: "Verificación de empresas (KYC), comunidades de empresas, conexión por API",
-        when: "Dic 2026",
+        when: "Oct 2026",
         soon: true,
       },
       {
