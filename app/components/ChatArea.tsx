@@ -9,6 +9,8 @@ interface ChatAreaProps {
   messages: Message[];
   onSendMessage: (content: string) => void;
   onToggleMobileMenu: () => void;
+  onToggleMemberList?: () => void;
+  isMemberListOpen?: boolean;
 }
 
 export function ChatArea({
@@ -17,6 +19,8 @@ export function ChatArea({
   messages,
   onSendMessage,
   onToggleMobileMenu,
+  onToggleMemberList,
+  isMemberListOpen,
 }: ChatAreaProps) {
   const [inputText, setInputText] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -53,7 +57,19 @@ export function ChatArea({
             <span className="chat-header-topic">{channel.topic}</span>
           )}
         </div>
-        <div className="header-badge">{community.name}</div>
+        <div className="chat-header-actions">
+          <div className="header-badge">{community.name}</div>
+          {onToggleMemberList && (
+            <button
+              type="button"
+              className={`header-icon-btn ${isMemberListOpen ? 'active' : ''}`}
+              onClick={onToggleMemberList}
+              title="Mostrar/Ocultar lista de miembros"
+            >
+              👥
+            </button>
+          )}
+        </div>
       </header>
 
       <section className="message-feed" aria-label="Historial de mensajes">

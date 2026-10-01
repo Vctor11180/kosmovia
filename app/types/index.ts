@@ -5,6 +5,8 @@ export interface User {
   avatar?: string;
   role?: 'admin' | 'builder' | 'member';
   isOnline?: boolean;
+  bio?: string;
+  statusText?: string;
 }
 
 export interface Channel {
@@ -22,6 +24,7 @@ export interface Community {
   icon: string;
   description: string;
   channels: Channel[];
+  members: User[];
 }
 
 export interface Message {

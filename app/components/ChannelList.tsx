@@ -8,6 +8,7 @@ interface ChannelListProps {
   activeChannelId: string;
   onSelectChannel: (id: string) => void;
   currentUser: User;
+  onOpenProfile?: () => void;
 }
 
 export function ChannelList({
@@ -15,6 +16,7 @@ export function ChannelList({
   activeChannelId,
   onSelectChannel,
   currentUser,
+  onOpenProfile,
 }: ChannelListProps) {
   return (
     <aside className="channel-sidebar" aria-label="Canales">
@@ -40,7 +42,12 @@ export function ChannelList({
         })}
       </div>
 
-      <div className="user-profile-bar">
+      <button
+        type="button"
+        className="user-profile-bar"
+        onClick={onOpenProfile}
+        title="Ver y editar mi perfil"
+      >
         <div className="user-avatar-badge">
           {currentUser.displayName.charAt(0)}
           <span className="status-dot" />
@@ -49,7 +56,8 @@ export function ChannelList({
           <span className="user-name">{currentUser.displayName}</span>
           <span className="user-tag">{currentUser.username}</span>
         </div>
-      </div>
+        <span className="user-gear-icon">⚙️</span>
+      </button>
     </aside>
   );
 }
