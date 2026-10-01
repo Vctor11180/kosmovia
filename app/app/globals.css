@@ -2019,4 +2019,290 @@ html, body {
   border: 1px solid var(--line);
 }
 
+/* ==========================================================================
+   B2B SETTLEMENTS & ACCOUNTING PANEL (WALLET DRAWER)
+   ========================================================================== */
+
+.wallet-nav-tabs {
+  display: flex;
+  background: var(--bg);
+  border-bottom: 1px solid var(--line);
+  padding: 6px 12px;
+  gap: 6px;
+}
+
+.wallet-nav-tab {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+}
+
+.wallet-nav-tab:hover {
+  color: var(--fg);
+  background: var(--surface-hover);
+}
+
+.wallet-nav-tab.active {
+  background: var(--surface-hover);
+  color: var(--accent);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+
+.tab-pending-badge {
+  background: #f59e0b;
+  color: #05080c;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 1px 5px;
+  border-radius: 999px;
+  line-height: 1.2;
+}
+
+.settlement-metrics-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.settlement-stat-card {
+  background: var(--surface-alt);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.settlement-stat-card.full-width {
+  grid-column: 1 / -1;
+  background: linear-gradient(135deg, rgba(0, 242, 254, 0.08) 0%, rgba(10, 17, 26, 0.95) 100%);
+  border-color: rgba(0, 242, 254, 0.25);
+}
+
+.settlement-stat-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.settlement-stat-value {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--fg);
+}
+
+.settlement-stat-value.fee {
+  color: #f87171;
+}
+
+.settlement-stat-value.highlight {
+  font-size: 24px;
+  color: var(--accent);
+}
+
+.settlement-stat-sub {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.settlement-notice-box {
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  color: #34d399;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 10px 14px;
+  border-radius: 10px;
+  text-align: center;
+}
+
+.settlement-actions-row {
+  display: flex;
+  gap: 10px;
+}
+
+.btn-export-csv {
+  flex: 1;
+  background: var(--surface-alt);
+  border: 1px solid var(--line);
+  color: var(--fg);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 10px;
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+}
+
+.btn-export-csv:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--surface-hover);
+}
+
+.btn-export-csv:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-disburse-batch {
+  flex: 1;
+  background: var(--accent);
+  border: none;
+  color: #05080c;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 10px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-disburse-batch:hover:not(:disabled) {
+  background: var(--accent-hover);
+  transform: translateY(-1px);
+}
+
+.settlement-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.settlement-count-badge {
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.settlement-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.settlement-item {
+  background: var(--surface-alt);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: border-color 0.15s ease;
+}
+
+.settlement-item:hover {
+  border-color: rgba(0, 242, 254, 0.3);
+}
+
+.settlement-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.settlement-order-id {
+  font-family: monospace;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.settlement-status-badge {
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 999px;
+}
+
+.settlement-status-badge.completed {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.settlement-status-badge.pending {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.settlement-concept {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fg);
+}
+
+.settlement-meta-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.settlement-amounts-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1.2fr;
+  background: var(--bg);
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  gap: 4px;
+}
+
+.amount-col {
+  display: flex;
+  flex-direction: column;
+}
+
+.amount-col-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.amount-col-val {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--fg);
+}
+
+.amount-col-val.fee {
+  color: #f87171;
+}
+
+.amount-col-val.net {
+  color: var(--accent);
+  font-size: 13px;
+}
+
+.settlement-footer-row {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 4px;
+}
+
+
 

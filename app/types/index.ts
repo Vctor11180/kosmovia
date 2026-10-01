@@ -45,3 +45,16 @@ export interface WalletTransaction {
   hash: string;
 }
 
+export interface SettlementRecord {
+  id: string;
+  orderId: string;
+  concept: string;
+  client: string;
+  totalUSDC: number;
+  feeUSDC: number; // 0.5% comision pasarela
+  netUSDC: number;
+  status: 'COMPLETED' | 'PENDING';
+  settlementTxHash: string;
+  createdAt: string;
+}
+

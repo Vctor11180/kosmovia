@@ -10,7 +10,7 @@ import { ProfileModal } from '../../components/ProfileModal';
 import { WalletDrawer } from '../../components/WalletDrawer';
 import { CreateChannelModal } from '../../components/CreateChannelModal';
 import { QuickInvoiceModal } from '../../components/QuickInvoiceModal';
-import { Channel, Community, Message, User, WalletTransaction } from '../../types';
+import { Channel, Community, Message, SettlementRecord, User, WalletTransaction } from '../../types';
 
 const INITIAL_USER: User = {
   id: 'usr-1',
@@ -119,6 +119,45 @@ const INITIAL_TRANSACTIONS: WalletTransaction[] = [
   },
 ];
 
+const INITIAL_SETTLEMENTS: SettlementRecord[] = [
+  {
+    id: 'stl-1',
+    orderId: 'ORD-8921',
+    concept: 'Factura #204 - Bienes Raíces Santa Cruz',
+    client: 'Inmobiliaria Urbana S.R.L.',
+    totalUSDC: 450.0,
+    feeUSDC: 2.25,
+    netUSDC: 447.75,
+    status: 'COMPLETED',
+    settlementTxHash: '6be268a284eee59916485c32eadc2d89d092c1b14c60443969cb504996147181',
+    createdAt: '30 Sep 2026, 18:40',
+  },
+  {
+    id: 'stl-2',
+    orderId: 'ORD-8922',
+    concept: 'Servicios de Consultoría Tecnológica & Smart Contracts',
+    client: 'TechRebel Chapter Bolivia',
+    totalUSDC: 250.0,
+    feeUSDC: 1.25,
+    netUSDC: 248.75,
+    status: 'COMPLETED',
+    settlementTxHash: '8f73b9e82047d2fka912837bc9910248cba00184719283746192837465910293',
+    createdAt: '30 Sep 2026, 21:15',
+  },
+  {
+    id: 'stl-3',
+    orderId: 'ORD-8923',
+    concept: 'Cobro B2B - Distribuidora Andina La Paz',
+    client: 'Distribuidora Andina',
+    totalUSDC: 85.0,
+    feeUSDC: 0.42,
+    netUSDC: 84.58,
+    status: 'PENDING',
+    settlementTxHash: '4a1b9c2837461829374619283746591029384719283746192837465910293847',
+    createdAt: 'Hoy, 09:20',
+  },
+];
+
 const INITIAL_MESSAGES: Record<string, Message[]> = {
   'chan-1': [
     {
@@ -175,6 +214,7 @@ export default function PlataformaPage() {
   const [balanceXLM] = useState<number>(42.8);
   const [publicKey] = useState<string>('GD26UBYVEYYVVOVCMOLPMIKPWQRFV34LK3I7LHBNTUGYHYIKFMEREH2A');
   const [transactions, setTransactions] = useState<WalletTransaction[]>(INITIAL_TRANSACTIONS);
+  const [settlements, setSettlements] = useState<SettlementRecord[]>(INITIAL_SETTLEMENTS);
 
   // Sincronizar tema con atributo en documentElement
   useEffect(() => {
@@ -271,11 +311,29 @@ export default function PlataformaPage() {
 
     setTransactions((prev) => [newTx, ...prev]);
 
+    const fee = Math.round(amount * 0.005 * 100) / 100;
+    const net = Math.round((amount - fee) * 100) / 100;
+
+    const newSettlement: SettlementRecord = {
+      id: `stl-${Date.now()}`,
+      orderId: `ORD-${Math.floor(1000 + Math.random() * 9000)}`,
+      concept,
+      client: activeCommunity.name,
+      totalUSDC: amount,
+      feeUSDC: fee,
+      netUSDC: net,
+      status: 'COMPLETED',
+      settlementTxHash: '6be268a284eee59916485c32eadc2d89d092c1b14c60443969cb504996147181',
+      createdAt: 'Hoy, ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    };
+
+    setSettlements((prev) => [newSettlement, ...prev]);
+
     const paidMsg: Message = {
       id: `m-pay-inv-${Date.now()}`,
       channelId: activeChannel.id,
       author: currentUser,
-      content: `✅ Cobro saldado: ${amount} USDC por "${concept}". Transacción confirmada en Stellar Testnet.`,
+      content: `✅ Cobro saldado: ${amount} USDC por "${concept}". Fee 0.5% deducido (${fee} USDC). Transacción confirmada en Stellar Testnet.`,
       createdAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     };
 
@@ -283,6 +341,12 @@ export default function PlataformaPage() {
       ...prev,
       [activeChannel.id]: [...(prev[activeChannel.id] || []), paidMsg],
     }));
+  };
+
+  const handleDisbursePending = () => {
+    setSettlements((prev) =>
+      prev.map((s) => (s.status === 'PENDING' ? { ...s, status: 'COMPLETED' } : s))
+    );
   };
 
   const handleUpdateProfile = (updated: { displayName: string; bio: string }) => {
@@ -388,6 +452,8 @@ export default function PlataformaPage() {
         publicKey={publicKey}
         transactions={transactions}
         onSend={handleSendPayment}
+        settlements={settlements}
+        onDisbursePending={handleDisbursePending}
       />
 
       <CreateChannelModal
