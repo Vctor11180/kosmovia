@@ -189,6 +189,45 @@ const INITIAL_MESSAGES: Record<string, Message[]> = {
       createdAt: '19:15',
     },
   ],
+  'chan-4': [
+    {
+      id: 'm-401',
+      channelId: 'chan-4',
+      author: TEAM_MEMBERS[1],
+      content: '¡Hola a toda la comunidad de Stellar Elite Bolivia! 🇧🇴 Bienvenidos a la coordinación.',
+      createdAt: '10:00',
+    },
+    {
+      id: 'm-402',
+      channelId: 'chan-4',
+      author: INITIAL_USER,
+      content: '¡Buenas! Con el frontend listo podemos probar transferencias y emisión de pagos en testnet.',
+      createdAt: '10:04',
+    },
+    {
+      id: 'm-403',
+      channelId: 'chan-4',
+      author: TEAM_MEMBERS[2],
+      content: 'Excelente, los smart contracts de Soroban ya están desplegados para las liquidaciones B2B.',
+      createdAt: '10:08',
+    },
+  ],
+  'chan-7': [
+    {
+      id: 'm-701',
+      channelId: 'chan-7',
+      author: TEAM_MEMBERS[1],
+      content: 'Canal de cobros para empresas bolivianas. Cada orden emitida deduce 0.5% de fee y se liquida en USDC.',
+      createdAt: '09:00',
+    },
+    {
+      id: 'm-702',
+      channelId: 'chan-7',
+      author: INITIAL_USER,
+      content: '[COBRO_B2B:{"amount":75,"concept":"Factura #205 - Servicios Cloud & Pasarela B2B"}]',
+      createdAt: '09:15',
+    },
+  ],
 };
 
 export default function PlataformaPage() {

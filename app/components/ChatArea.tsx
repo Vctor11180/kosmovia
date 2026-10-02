@@ -118,58 +118,86 @@ export function ChatArea({
       </header>
 
       <section className="message-feed" aria-label="Historial de mensajes">
-        {messages.map((msg) => {
-          // Detectar si el mensaje es una tarjeta de cobro B2B interactiva
-          const isInvoice = msg.content.startsWith('[COBRO_B2B:');
-          let invoiceData: { amount: number; concept: string } | null = null;
-          if (isInvoice) {
-            try {
-              const raw = msg.content.replace('[COBRO_B2B:', '').replace(']', '');
-              invoiceData = JSON.parse(raw);
-            } catch {
-              invoiceData = null;
+        {messages.length === 0 ? (
+          <div className="empty-chat-state">
+            <div className="empty-chat-icon">💬</div>
+            <h3 className="empty-chat-title">Bienvenido a #{channel.name}</h3>
+            <p className="empty-chat-desc">
+              {channel.topic || 'Este es el inicio del canal. ¡Sé el primero en enviar un mensaje o emitir un cobro B2B en Stellar!'}
+            </p>
+            <div className="empty-chat-actions">
+              <button
+                type="button"
+                className="btn-empty-action"
+                onClick={() => onSendMessage('👋 ¡Hola a todos! Arrancamos la conversación por acá.')}
+              >
+                👋 Saludar en el canal
+              </button>
+              {onOpenQuickInvoice && (
+                <button
+                  type="button"
+                  className="btn-empty-action accent"
+                  onClick={onOpenQuickInvoice}
+                >
+                  💸 Emitir Cobro B2B
+                </button>
+              )}
+            </div>
+          </div>
+        ) : (
+          messages.map((msg) => {
+            // Detectar si el mensaje es una tarjeta de cobro B2B interactiva
+            const isInvoice = msg.content.startsWith('[COBRO_B2B:');
+            let invoiceData: { amount: number; concept: string } | null = null;
+            if (isInvoice) {
+              try {
+                const raw = msg.content.replace('[COBRO_B2B:', '').replace(']', '');
+                invoiceData = JSON.parse(raw);
+              } catch {
+                invoiceData = null;
+              }
             }
-          }
 
-          const isPaid = paidInvoices[msg.id];
+            const isPaid = paidInvoices[msg.id];
 
-          return (
-            <article key={msg.id} className="message-item">
-              <div className="msg-avatar">
-                {msg.author.displayName.charAt(0)}
-              </div>
-              <div className="msg-body">
-                <div className="msg-header">
-                  <span className="msg-author">{msg.author.displayName}</span>
-                  {msg.author.role && (
-                    <span className={`msg-role-tag ${msg.author.role}`}>{msg.author.role}</span>
-                  )}
-                  <time className="msg-time">{msg.createdAt}</time>
+            return (
+              <article key={msg.id} className="message-item">
+                <div className="msg-avatar">
+                  {msg.author.displayName.charAt(0)}
                 </div>
-
-                {invoiceData ? (
-                  <div className="invoice-card">
-                    <div className="invoice-header-row">
-                      <span className="invoice-tag">Cobro en Stellar</span>
-                      <span className="invoice-amount-text">{invoiceData.amount} USDC</span>
-                    </div>
-                    <p className="invoice-concept">{invoiceData.concept}</p>
-                    <button
-                      type="button"
-                      className={`btn-pay-invoice ${isPaid ? 'paid' : ''}`}
-                      onClick={() => invoiceData && handlePay(msg.id, invoiceData.amount, invoiceData.concept)}
-                      disabled={isPaid}
-                    >
-                      {isPaid ? '✓ Pago Confirmado en Testnet' : `Pagar ${invoiceData.amount} USDC`}
-                    </button>
+                <div className="msg-body">
+                  <div className="msg-header">
+                    <span className="msg-author">{msg.author.displayName}</span>
+                    {msg.author.role && (
+                      <span className={`msg-role-tag ${msg.author.role}`}>{msg.author.role}</span>
+                    )}
+                    <time className="msg-time">{msg.createdAt}</time>
                   </div>
-                ) : (
-                  <p className="msg-content">{msg.content}</p>
-                )}
-              </div>
-            </article>
-          );
-        })}
+
+                  {invoiceData ? (
+                    <div className="invoice-card">
+                      <div className="invoice-header-row">
+                        <span className="invoice-tag">Cobro en Stellar</span>
+                        <span className="invoice-amount-text">{invoiceData.amount} USDC</span>
+                      </div>
+                      <p className="invoice-concept">{invoiceData.concept}</p>
+                      <button
+                        type="button"
+                        className={`btn-pay-invoice ${isPaid ? 'paid' : ''}`}
+                        onClick={() => invoiceData && handlePay(msg.id, invoiceData.amount, invoiceData.concept)}
+                        disabled={isPaid}
+                      >
+                        {isPaid ? '✓ Pago Confirmado en Testnet' : `Pagar ${invoiceData.amount} USDC`}
+                      </button>
+                    </div>
+                  ) : (
+                    <p className="msg-content">{msg.content}</p>
+                  )}
+                </div>
+              </article>
+            );
+          })
+        )}
         <div ref={messagesEndRef} />
       </section>
 

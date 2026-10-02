@@ -36,9 +36,175 @@
 }
 
 [data-theme="light"] .app-container {
-  background:
-    radial-gradient(1200px 600px at 80% -10%, #e0f2fe 0%, transparent 70%),
-    var(--bg);
+  background: var(--bg);
+}
+
+[data-theme="light"] .community-bar {
+  background: #f1f5f9;
+  border-right-color: var(--line);
+}
+
+[data-theme="light"] .community-icon-btn {
+  background: #ffffff;
+  border-color: var(--line);
+  color: var(--fg);
+}
+
+[data-theme="light"] .community-icon-btn:hover {
+  background: #e2e8f0;
+  border-color: var(--accent);
+}
+
+[data-theme="light"] .community-icon-btn.active {
+  background: var(--accent);
+  color: #ffffff;
+}
+
+[data-theme="light"] .channel-sidebar {
+  background: #ffffff;
+  border-right-color: var(--line);
+}
+
+[data-theme="light"] .channel-item-btn {
+  color: var(--muted);
+}
+
+[data-theme="light"] .channel-item-btn:hover {
+  background: #f1f5f9;
+  color: var(--fg);
+}
+
+[data-theme="light"] .channel-item-btn.active {
+  background: rgba(0, 153, 168, 0.1);
+  color: var(--accent);
+  font-weight: 700;
+}
+
+[data-theme="light"] .channel-item-btn.active .channel-hash {
+  color: var(--accent);
+}
+
+[data-theme="light"] .chat-area {
+  background: #f8fafc;
+}
+
+[data-theme="light"] .chat-header {
+  background: #ffffff;
+  border-bottom-color: var(--line);
+  backdrop-filter: none;
+}
+
+[data-theme="light"] .chat-header-title {
+  color: var(--fg);
+}
+
+[data-theme="light"] .chat-header-topic {
+  color: var(--muted);
+  border-left-color: var(--line);
+}
+
+[data-theme="light"] .header-badge {
+  background: rgba(0, 153, 168, 0.1);
+  border-color: rgba(0, 153, 168, 0.25);
+  color: var(--accent);
+}
+
+[data-theme="light"] .header-wallet-pill {
+  background: rgba(0, 153, 168, 0.1);
+  border-color: rgba(0, 153, 168, 0.3);
+  color: var(--accent);
+}
+
+[data-theme="light"] .header-icon-btn {
+  background: #f1f5f9;
+  border-color: var(--line);
+  color: var(--fg);
+}
+
+[data-theme="light"] .header-icon-btn:hover,
+[data-theme="light"] .header-icon-btn.active {
+  background: #e2e8f0;
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+[data-theme="light"] .msg-author {
+  color: #0f172a;
+}
+
+[data-theme="light"] .msg-content {
+  color: #1e293b;
+}
+
+[data-theme="light"] .msg-time {
+  color: #64748b;
+}
+
+[data-theme="light"] .msg-avatar {
+  background: #f1f5f9;
+  border-color: var(--line);
+  color: var(--accent);
+}
+
+[data-theme="light"] .message-item:hover {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+[data-theme="light"] .invoice-card {
+  background: linear-gradient(135deg, rgba(0, 153, 168, 0.08) 0%, #ffffff 100%);
+  border-color: rgba(0, 153, 168, 0.35);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .invoice-amount-text {
+  color: #0f172a;
+}
+
+[data-theme="light"] .invoice-concept {
+  color: #64748b;
+}
+
+[data-theme="light"] .chat-input-container {
+  background: #ffffff;
+  border-top-color: var(--line);
+}
+
+[data-theme="light"] .chat-input-box {
+  background: #f8fafc;
+  border-color: var(--line);
+}
+
+[data-theme="light"] .chat-input-field {
+  color: #0f172a;
+}
+
+[data-theme="light"] .chat-send-btn {
+  background: var(--accent);
+  color: #ffffff;
+}
+
+[data-theme="light"] .member-sidebar {
+  background: #ffffff;
+  border-left-color: var(--line);
+}
+
+[data-theme="light"] .member-item:hover {
+  background: #f1f5f9;
+}
+
+[data-theme="light"] .member-avatar {
+  background: #f1f5f9;
+  border-color: var(--line);
+  color: var(--accent);
+}
+
+[data-theme="light"] .user-profile-bar {
+  background: #f8fafc;
+  border-top-color: var(--line);
+}
+
+[data-theme="light"] .user-name {
+  color: #0f172a;
 }
 
 * {
@@ -71,7 +237,7 @@ html, body {
 /* Community Bar */
 .community-bar {
   width: 72px;
-  background: rgba(7, 6, 15, 0.95);
+  background: var(--surface-alt);
   border-right: 1px solid var(--line);
   display: flex;
   flex-direction: column;
@@ -292,7 +458,7 @@ html, body {
   display: flex;
   flex-direction: column;
   min-width: 0;
-  background: rgba(7, 6, 15, 0.4);
+  background: var(--bg);
 }
 
 .chat-header {
@@ -303,8 +469,7 @@ html, body {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  background: rgba(14, 11, 31, 0.6);
-  backdrop-filter: blur(12px);
+  background: var(--surface);
   flex-shrink: 0;
 }
 
@@ -361,6 +526,93 @@ html, body {
   display: flex;
   flex-direction: column;
   gap: 16px;
+}
+
+/* Empty State for Channels */
+.empty-chat-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 60px 20px;
+  margin: auto;
+  max-width: 460px;
+  gap: 12px;
+}
+
+.empty-chat-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 20px;
+  background: rgba(0, 242, 254, 0.1);
+  border: 1px solid rgba(0, 242, 254, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  color: var(--accent);
+  margin-bottom: 4px;
+}
+
+[data-theme="light"] .empty-chat-icon {
+  background: rgba(0, 153, 168, 0.1);
+  border-color: rgba(0, 153, 168, 0.25);
+}
+
+.empty-chat-title {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--fg);
+}
+
+.empty-chat-desc {
+  font-size: 14px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.empty-chat-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.btn-empty-action {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--fg);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 16px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-empty-action:hover {
+  background: var(--surface-hover);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.btn-empty-action.accent {
+  background: var(--accent);
+  color: #05080c;
+  border: none;
+  font-weight: 700;
+}
+
+[data-theme="light"] .btn-empty-action.accent {
+  color: #ffffff;
+}
+
+.btn-empty-action.accent:hover {
+  background: var(--accent-hover);
+  transform: translateY(-1px);
 }
 
 .message-item {
@@ -427,7 +679,7 @@ html, body {
 .msg-content {
   font-size: 14px;
   line-height: 1.5;
-  color: #ddd9f3;
+  color: var(--fg);
   word-break: break-word;
 }
 
