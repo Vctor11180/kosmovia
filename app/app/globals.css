@@ -200,11 +200,30 @@
 
 [data-theme="light"] .user-profile-bar {
   background: #f8fafc;
-  border-top-color: var(--line);
+  border-top: 1px solid var(--line);
+  color: #0f172a;
+}
+
+[data-theme="light"] .user-profile-bar:hover {
+  background: #e2e8f0;
 }
 
 [data-theme="light"] .user-name {
   color: #0f172a;
+}
+
+[data-theme="light"] .user-tag {
+  color: #64748b;
+}
+
+[data-theme="light"] .user-avatar-badge {
+  background: rgba(0, 153, 168, 0.12);
+  border-color: rgba(0, 153, 168, 0.25);
+  color: var(--accent);
+}
+
+[data-theme="light"] .status-dot {
+  border-color: #f8fafc;
 }
 
 * {
@@ -401,12 +420,29 @@ html, body {
 }
 
 .user-profile-bar {
-  padding: 12px 14px;
+  width: 100%;
+  padding: 10px 14px;
   background: var(--surface-alt);
+  border: none;
   border-top: 1px solid var(--line);
   display: flex;
   align-items: center;
   gap: 10px;
+  cursor: pointer;
+  text-align: left;
+  color: var(--fg);
+  font-family: inherit;
+  outline: none;
+  transition: background 0.15s ease;
+}
+
+.user-profile-bar:hover {
+  background: var(--surface-hover);
+}
+
+.user-profile-bar:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
 }
 
 .user-avatar-badge {
@@ -414,14 +450,15 @@ html, body {
   width: 34px;
   height: 34px;
   border-radius: 50%;
-  background: var(--surface-hover);
-  border: 1px solid var(--line);
+  background: rgba(0, 242, 254, 0.12);
+  border: 1px solid rgba(0, 242, 254, 0.25);
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 700;
   font-size: 13px;
   color: var(--accent);
+  flex-shrink: 0;
 }
 
 .status-dot {
@@ -439,17 +476,26 @@ html, body {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  flex: 1;
+  min-width: 0;
 }
 
 .user-name {
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 700;
   line-height: 1.2;
+  color: var(--fg);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .user-tag {
   font-size: 11px;
   color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Chat Main Area */
@@ -859,13 +905,16 @@ html, body {
 
 .user-gear-icon {
   margin-left: auto;
-  font-size: 13px;
+  font-size: 14px;
   opacity: 0.6;
-  transition: transform 0.2s ease, opacity 0.2s ease;
+  color: var(--muted);
+  transition: transform 0.2s ease, opacity 0.2s ease, color 0.2s ease;
+  flex-shrink: 0;
 }
 
 .user-profile-bar:hover .user-gear-icon {
   opacity: 1;
+  color: var(--fg);
   transform: rotate(45deg);
 }
 
