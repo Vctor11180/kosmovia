@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
+import { CoreProviders } from '../components/CoreProviders';
 
 export const metadata: Metadata = {
   title: 'Kosmovia · Comunidades y Chat',
@@ -20,7 +21,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es">
-      <body>{children}</body>
+      <body>
+        <CoreProviders>{children}</CoreProviders>
+      </body>
     </html>
   );
 }

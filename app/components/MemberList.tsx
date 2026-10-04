@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { User } from '../types';
+import { AvatarFace } from './AvatarFace';
 
 interface MemberListProps {
   members: User[];
@@ -24,7 +25,7 @@ export function MemberList({ members, isOpen }: MemberListProps) {
           <div key={member.id} className="member-item">
             <div className="member-avatar-wrapper">
               <div className="member-avatar">
-                {member.displayName.charAt(0)}
+                <AvatarFace avatar={member.avatar} name={member.displayName} />
               </div>
               <span className="member-status-dot online" />
             </div>
@@ -53,7 +54,7 @@ export function MemberList({ members, isOpen }: MemberListProps) {
               <div key={member.id} className="member-item offline">
                 <div className="member-avatar-wrapper">
                   <div className="member-avatar">
-                    {member.displayName.charAt(0)}
+                    <AvatarFace avatar={member.avatar} name={member.displayName} />
                   </div>
                   <span className="member-status-dot offline" />
                 </div>

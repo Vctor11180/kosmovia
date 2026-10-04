@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { User } from '../types';
+import { AvatarFace } from './AvatarFace';
 
 interface ProfileModalProps {
   user: User;
@@ -77,7 +78,7 @@ export function ProfileModal({
           <form onSubmit={handleSubmit} className="modal-body">
             <div className="profile-banner">
               <div className="profile-avatar-large">
-                {displayName.charAt(0)}
+                <AvatarFace avatar={user.avatar} name={displayName} />
                 <span className="profile-online-badge" />
               </div>
             </div>

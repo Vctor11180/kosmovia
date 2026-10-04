@@ -2,8 +2,16 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { SERVICES_MODE } from '../../services';
+import { CoreLogin } from './CoreLogin';
 
 export default function LoginPage() {
+  // Modo api: login real con Pollar. Modo demo: el login de siempre.
+  if (SERVICES_MODE === 'api') return <CoreLogin />;
+  return <DemoLogin />;
+}
+
+function DemoLogin() {
   const [username, setUsername] = useState('@victor');
   const [isLoading, setIsLoading] = useState(false);
 

@@ -3,18 +3,23 @@ import { IChatService, MockChatService } from './chatService';
 import { ICommunityService, MockCommunityService } from './communityService';
 import { ISettlementService, MockSettlementService } from './settlementService';
 import { IWalletService, MockWalletService } from './walletService';
+import { ApiAuthService, ApiChatService, ApiCommunityService, ApiWalletService } from './api';
 
 /**
  * Service Gateway (Hexagonal Architecture)
- * 
- * En el presente, los servicios utilizan adapters con persistencia en localStorage.
- * Cuando el backend (Supabase / Stellar RPC / Polar) esté listo, se sustituye
- * la instancia aquí sin necesidad de refactorizar ni un solo componente de la UI.
+ *
+ * NEXT_PUBLIC_KOSMOVIA_SERVICES=api conecta la UI al backend de core (login
+ * con Pollar, comunidades, chat y pagos reales en testnet). Sin esa variable,
+ * todo sigue en modo demo con localStorage. Los cobros B2B (settlements)
+ * siguen en demo en los dos modos: core todavía no los tiene.
  */
-export const authService: IAuthService = new MockAuthService();
-export const communityService: ICommunityService = new MockCommunityService();
-export const chatService: IChatService = new MockChatService();
-export const walletService: IWalletService = new MockWalletService();
+export const SERVICES_MODE: 'api' | 'mock' = process.env.NEXT_PUBLIC_KOSMOVIA_SERVICES === 'api' ? 'api' : 'mock';
+const api = SERVICES_MODE === 'api';
+
+export const authService: IAuthService = api ? new ApiAuthService() : new MockAuthService();
+export const communityService: ICommunityService = api ? new ApiCommunityService() : new MockCommunityService();
+export const chatService: IChatService = api ? new ApiChatService() : new MockChatService();
+export const walletService: IWalletService = api ? new ApiWalletService() : new MockWalletService();
 export const settlementService: ISettlementService = new MockSettlementService();
 
 export * from './authService';

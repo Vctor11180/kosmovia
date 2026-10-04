@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Community, User } from '../types';
+import { AvatarFace } from './AvatarFace';
 
 interface ChannelListProps {
   community: Community;
@@ -63,7 +64,7 @@ export function ChannelList({
         title="Ver y editar mi perfil"
       >
         <div className="user-avatar-badge">
-          {currentUser.displayName.charAt(0)}
+          <AvatarFace avatar={currentUser.avatar} name={currentUser.displayName} />
           <span className="status-dot" />
         </div>
         <div className="user-info">

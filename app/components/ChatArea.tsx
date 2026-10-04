@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Channel, Community, Message } from '../types';
+import { AvatarFace } from './AvatarFace';
 
 interface ChatAreaProps {
   channel: Channel;
@@ -163,7 +164,7 @@ export function ChatArea({
             return (
               <article key={msg.id} className="message-item">
                 <div className="msg-avatar">
-                  {msg.author.displayName.charAt(0)}
+                  <AvatarFace avatar={msg.author.avatar} name={msg.author.displayName} />
                 </div>
                 <div className="msg-body">
                   <div className="msg-header">
