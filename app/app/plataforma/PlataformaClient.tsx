@@ -48,6 +48,8 @@ export function PlataformaPage() {
   const [publicKey, setPublicKey] = useState<string>('GD26UBYVEYYVVOVCMOLPMIKPWQRFV34LK3I7LHBNTUGYHYIKFMEREH2A');
   const [transactions, setTransactions] = useState<WalletTransaction[]>(INITIAL_TRANSACTIONS);
   const [settlements, setSettlements] = useState<SettlementRecord[]>(INITIAL_SETTLEMENTS);
+  // Borrador de integración: estado visible del pago (antes solo iba a la consola).
+  const [payNotice, setPayNotice] = useState<{ kind: 'info' | 'ok' | 'error'; text: string } | null>(null);
 
   // Sincronizar tema con atributo en documentElement
   useEffect(() => {
@@ -254,6 +256,7 @@ export function PlataformaPage() {
   };
 
   const handleSendPayment = async (to: string, amount: number, asset: 'USDC' | 'XLM') => {
+    setPayNotice({ kind: 'info', text: `Enviando ${amount} ${asset} a ${to}… (si usas Freighter, confirma ahí)` });
     try {
       const newTx = await walletService.sendPayment({
         to,
@@ -266,6 +269,7 @@ export function PlataformaPage() {
       setBalanceUSDC(balances.usdc);
       setBalanceXLM(balances.xlm);
 
+      setPayNotice({ kind: 'ok', text: `Pago enviado: ${amount} ${asset} a ${to}.` });
       await chatService.sendMessage(
         activeChannel.id,
         `💸 He transferido ${amount} ${asset} a ${to} mediante Stellar Testnet (Tx verificada).`,
@@ -273,6 +277,7 @@ export function PlataformaPage() {
       );
     } catch (err) {
       console.error('[PlataformaPage] Error sending payment:', err);
+      setPayNotice({ kind: 'error', text: err instanceof Error ? err.message : 'No se pudo enviar el pago.' });
     }
   };
 
@@ -355,6 +360,22 @@ export function PlataformaPage() {
         onClose={() => setIsQuickInvoiceOpen(false)}
         onSubmit={handleCreateInvoice}
       />
+      {payNotice ? (
+        <div
+          role={payNotice.kind === 'error' ? 'alert' : 'status'}
+          onClick={() => payNotice.kind !== 'info' && setPayNotice(null)}
+          style={{
+            position: 'fixed', left: '50%', bottom: 24, transform: 'translateX(-50%)', zIndex: 1000,
+            maxWidth: 'min(92vw, 520px)', padding: '12px 16px', borderRadius: 12, fontSize: 14, cursor: 'pointer',
+            background: payNotice.kind === 'error' ? '#3a1616' : '#0b1f21',
+            color: payNotice.kind === 'error' ? '#ffb4b4' : '#f2fbfa',
+            border: `1px solid ${payNotice.kind === 'ok' ? '#2dd4bf' : payNotice.kind === 'error' ? '#f87171' : '#143235'}`,
+            boxShadow: '0 8px 24px rgba(0,0,0,0.35)',
+          }}
+        >
+          {payNotice.text}
+        </div>
+      ) : null}
     </div>
   );
 }

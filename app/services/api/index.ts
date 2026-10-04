@@ -20,7 +20,7 @@ import {
   ADDRESS_RE,
   attemptDeadlineMs,
   checkAmount,
-  classifySubmit,
+  classifyWithPhase,
   newPaymentRef,
   paymentOptions,
   pollarAsset,
@@ -319,6 +319,7 @@ export class ApiWalletService implements IWalletService {
     const startedAt = new Date().toISOString();
     rememberPayment(me, { memo, startedAt, toWallet: destination, toLabel: raw, amount: checked.amount, asset: input.asset, note: '' });
     let outcome: Awaited<ReturnType<PollarClient['sendPayment']>> | undefined;
+    client.resetTransactionState();
     try {
       outcome = await client.sendPayment({
         destination,
@@ -326,12 +327,18 @@ export class ApiWalletService implements IWalletService {
         asset: pollarAsset(input.asset),
         options: paymentOptions(memo),
       });
-    } catch {
+    } catch (err) {
       // Desconocido: se busca, no se reenvía.
+      outcome = { status: 'error', details: err instanceof Error ? err.message : undefined };
     }
-    if (classifySubmit(outcome) === 'rejected') {
+    if (classifyWithPhase(outcome, client.getTransactionState()) === 'rejected') {
       forgetPayment(me);
-      throw new ApiError(rejectionMessage(rejectionReason(outcome) ?? 'other'));
+      const reason = rejectionReason(outcome);
+      const why = outcome?.status === 'error' ? outcome.details ?? outcome.message ?? '' : '';
+      throw new ApiError(reason ? rejectionMessage(reason) : `No se pudo enviar y no se movió dinero.${why ? ` Pollar dijo: ${why.slice(0, 160)}` : ''}`);
+    }
+    if (outcome?.status === 'error' && !outcome.hash) {
+      console.warn('[pagos] Pollar no devolvió hash:', [outcome.code, outcome.details ?? outcome.message].filter(Boolean).join(' · '));
     }
 
     // Verificar en Horizon y guardar (por hash, o por memo si no volvió hash).
