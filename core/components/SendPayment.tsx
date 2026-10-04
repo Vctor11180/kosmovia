@@ -13,7 +13,7 @@ import {
   PAYMENT_ASSETS,
   attemptDeadlineMs,
   checkAmount,
-  classifySubmit,
+  classifyWithPhase,
   explorerTxUrl,
   newPaymentRef,
   paymentOptions,
@@ -44,7 +44,7 @@ type Stage =
   | { step: "review"; recipient: Recipient; amount: string }
   | { step: "sending"; recipient: Recipient; flight: InFlightPayment }
   /** Money may be in flight: only verify, never send again. */
-  | { step: "verifying"; recipient: Recipient | null; flight: InFlightPayment; hash?: string }
+  | { step: "verifying"; recipient: Recipient | null; flight: InFlightPayment; hash?: string; detail?: string }
   | { step: "done"; recipient: Recipient | null; flight: InFlightPayment; hash: string; warning: string | null };
 
 /** Quick amounts. Tests and demos use 0.02 USDC per payment. */
@@ -84,7 +84,7 @@ const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
  * found or provably never landed.
  */
 export function SendPayment({ address, balances, record, onSent, preset }: SendPaymentProps) {
-  const { sendPayment } = usePollar();
+  const { sendPayment, getClient } = usePollar();
   const toId = useId();
   const amountId = useId();
   const noteId = useId();
@@ -233,6 +233,8 @@ export function SendPayment({ address, balances, record, onSent, preset }: SendP
     rememberPayment(address, flight);
     setStage({ step: "sending", recipient, flight });
     let outcome: Awaited<ReturnType<typeof sendPayment>> | undefined;
+    // So the phase read below belongs to this send, not to an earlier one.
+    getClient().resetTransactionState();
     try {
       outcome = await sendPayment({
         destination: recipient.wallet,
@@ -240,18 +242,27 @@ export function SendPayment({ address, balances, record, onSent, preset }: SendP
         asset: pollarAsset(asset),
         options: paymentOptions(flight.memo),
       });
-    } catch {
+    } catch (err) {
       // A throw means "unknown", never "not sent".
+      outcome = { status: "error", details: err instanceof Error ? err.message : undefined };
     }
-    const verdict = classifySubmit(outcome);
+    const verdict = classifyWithPhase(outcome, getClient().getTransactionState());
     if (verdict === "rejected") {
       forgetPayment(address);
       setStage({ step: "review", recipient, amount: value });
-      setFormError(rejectionMessage(rejectionReason(outcome) ?? "other"));
+      const why = outcome?.status === "error" ? (outcome.details ?? outcome.message ?? "") : "";
+      const reason = rejectionReason(outcome);
+      setFormError(reason ? rejectionMessage(reason) : `No se pudo enviar y no se movió dinero.${why ? ` Pollar dijo: ${why.slice(0, 160)}` : ""}`);
       return;
     }
     if (verdict === "sent") onSent?.();
-    setStage({ step: "verifying", recipient, flight, hash: outcome?.hash });
+    // What Pollar said when there is no hash: shown so a failure can be diagnosed (never contains keys).
+    const detail =
+      outcome && outcome.status === "error" && !outcome.hash
+        ? [outcome.code, outcome.resultCode, outcome.details ?? outcome.message].filter(Boolean).join(" · ").slice(0, 200)
+        : undefined;
+    if (detail) console.warn("[pagos] Pollar no devolvió hash:", detail);
+    setStage({ step: "verifying", recipient, flight, hash: outcome?.hash, detail });
   };
 
   const reset = () => {
@@ -275,8 +286,10 @@ export function SendPayment({ address, balances, record, onSent, preset }: SendP
         <p role="status" className="muted">
           {done
             ? "Listo: el pago ya está en la red de prueba y en tu historial."
-            : "Lo estamos buscando en la red de Stellar. No cierres esta pantalla ni lo envíes de nuevo: si lo cierras, lo seguimos buscando cuando vuelvas."}
+            : "Lo estamos buscando en la red de Stellar. No lo envíes de nuevo: si cierras esta pantalla, lo seguimos buscando cuando vuelvas."}
         </p>
+        {!done ? <Countdown startedAt={flight.startedAt} /> : null}
+        {!done && stage.detail ? <p className="muted field-hint">Pollar respondió: {stage.detail}</p> : null}
         {done && stage.warning ? <p className="field-hint error">{stage.warning}</p> : null}
         <div className="form-actions">
           {hash ? (
@@ -423,6 +436,29 @@ export function SendPayment({ address, balances, record, onSent, preset }: SendP
         </button>
       </div>
     </form>
+  );
+}
+
+/**
+ * How long until the app can say for sure whether a payment without a hash
+ * landed: the transaction's 5-minute lifetime plus slack. Past that, the
+ * memo search answers "never landed" and the form comes back.
+ */
+function Countdown({ startedAt }: { startedAt: string }) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 1_000);
+    return () => clearInterval(t);
+  }, []);
+  const left = Math.max(0, Math.ceil((attemptDeadlineMs(Date.parse(startedAt)) - now) / 1000));
+  if (left === 0) return <p className="muted field-hint">Revisando una última vez en la red…</p>;
+  const mm = Math.floor(left / 60);
+  const ss = String(left % 60).padStart(2, "0");
+  return (
+    <p className="muted field-hint">
+      Si el pago no aparece, en {mm}:{ss} te avisamos y podrás intentarlo de nuevo. Mientras tanto no se puede enviar otra vez, para
+      que nunca pagues doble.
+    </p>
   );
 }
 

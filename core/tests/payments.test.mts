@@ -9,6 +9,7 @@ import {
   attemptDeadlineMs,
   checkAmount,
   classifySubmit,
+  classifyWithPhase,
   cleanNote,
   fromStroops,
   historyReaches,
@@ -207,4 +208,17 @@ test("0004_pagos.sql: un pago por operación y CHECKs de formato", () => {
   assert.match(sql, /asset in \('XLM', 'USDC'\)/);
   assert.match(sql, /amount > 0/);
   assert.match(sql, /char_length\(note\) between 1 and 140/);
+});
+
+test("un fallo al armar o firmar (antes de enviar) se muestra al instante", () => {
+  const err = { status: "error", details: "algo raro" };
+  assert.equal(classifyWithPhase(err, { step: "error", phase: "building" }), "rejected");
+  assert.equal(classifyWithPhase(err, { step: "error", phase: "signing" }), "rejected");
+  // Enviando o en una llamada atómica: puede haber salido.
+  assert.equal(classifyWithPhase(err, { step: "error", phase: "submitting" }), "unknown");
+  assert.equal(classifyWithPhase(err, { step: "error", phase: "signing-submitting" }), "unknown");
+  assert.equal(classifyWithPhase(err, { step: "error", phase: "building-signing-submitting" }), "unknown");
+  assert.equal(classifyWithPhase(err, null), "unknown");
+  // Con hash siempre es "sent", aunque el estado diga error.
+  assert.equal(classifyWithPhase({ status: "error", hash: HASH }, { step: "error", phase: "building" }), "sent");
 });

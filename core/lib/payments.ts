@@ -282,6 +282,27 @@ export function classifySubmit(outcome: OutcomeLike | null | undefined): "sent" 
   return rejectionReason(outcome) === null ? "unknown" : "rejected";
 }
 
+/**
+ * The SDK's own record of where a send failed (`getTransactionState()`), read
+ * right after the call. With an external wallet (Freighter) the transaction is
+ * built, then signed, then submitted: an error in `building` or `signing` was
+ * never submitted. Compound phases (`signing-submitting`, the custodial
+ * `building-signing-submitting`) and `submitting` stay unknown.
+ */
+export function failedBeforeSubmit(state: { step?: string; phase?: string } | null | undefined): boolean {
+  return state?.step === "error" && (state.phase === "building" || state.phase === "signing");
+}
+
+/** {@link classifySubmit} plus the SDK's phase: a failure proven to come before submission is a rejection. */
+export function classifyWithPhase(
+  outcome: OutcomeLike | null | undefined,
+  state: { step?: string; phase?: string } | null | undefined,
+): "sent" | "rejected" | "unknown" {
+  const verdict = classifySubmit(outcome);
+  if (verdict === "unknown" && outcome?.status === "error" && !outcome.hash && failedBeforeSubmit(state)) return "rejected";
+  return verdict;
+}
+
 export function rejectionMessage(reason: RejectionReason): string {
   switch (reason) {
     case "noWallet":
