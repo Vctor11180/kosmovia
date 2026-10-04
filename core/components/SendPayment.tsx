@@ -47,8 +47,8 @@ type Stage =
   | { step: "verifying"; recipient: Recipient | null; flight: InFlightPayment; hash?: string; detail?: string }
   | { step: "done"; recipient: Recipient | null; flight: InFlightPayment; hash: string; warning: string | null };
 
-/** Quick amounts. Tests and demos use 0.02 USDC per payment. */
-const QUICK: Record<PaymentAsset, string[]> = { USDC: ["0.02", "0.1", "1"], XLM: ["1", "5", "10"] };
+/** Quick amounts. The minimum is 0.01; tests and demos use 0.01-0.02 USDC per payment. */
+const QUICK: Record<PaymentAsset, string[]> = { USDC: ["0.01", "0.02", "0.1", "1"], XLM: ["1", "5", "10"] };
 const DEFAULT_AMOUNT = "0,02";
 
 export interface SendPaymentProps {

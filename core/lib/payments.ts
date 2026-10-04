@@ -11,6 +11,9 @@ import { HORIZON_URL, USDC_CODE, USDC_ISSUER_TESTNET } from "./pollar-config.ts"
 export type PaymentAsset = "XLM" | "USDC";
 export const PAYMENT_ASSETS: readonly PaymentAsset[] = ["USDC", "XLM"];
 
+/** Smallest payment: 0.01 of either asset (sub-cent sends are noise, and 0.01 USDC is the demo amount). */
+export const MIN_PAYMENT = "0.01";
+
 /** Per-payment cap while we are on testnet: big enough to demo, small enough to catch typos. */
 export const MAX_PAYMENT: Record<PaymentAsset, string> = { XLM: "10000", USDC: "10000" };
 
@@ -53,6 +56,7 @@ export function checkAmount(input: string, asset: PaymentAsset, balance?: string
   const stroops = toStroops(raw);
   if (stroops === null) return { ok: false, error: "Usa solo números, con hasta 7 decimales." };
   if (stroops <= ZERO) return { ok: false, error: "El monto tiene que ser mayor que 0." };
+  if (stroops < (toStroops(MIN_PAYMENT) as bigint)) return { ok: false, error: `El mínimo por envío es 0,01 ${asset}.` };
   const max = toStroops(MAX_PAYMENT[asset]) as bigint;
   if (stroops > max) return { ok: false, error: `En la red de prueba el máximo por envío es ${MAX_PAYMENT[asset]} ${asset}.` };
   if (balance != null) {

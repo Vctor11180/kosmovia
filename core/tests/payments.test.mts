@@ -64,6 +64,9 @@ test("checkAmount: coma decimal, mayor que 0, tope y saldo", () => {
   assert.deepEqual(checkAmount("2,5", "USDC"), { ok: true, amount: "2.5000000" });
   assert.equal(checkAmount("", "USDC").ok, false);
   assert.equal(checkAmount("0", "USDC").ok, false);
+  assert.equal(checkAmount("0,009", "USDC").ok, false, "el mínimo es 0,01");
+  assert.match((checkAmount("0.001", "XLM") as { error: string }).error, /mínimo por envío es 0,01 XLM/);
+  assert.deepEqual(checkAmount("0,01", "USDC"), { ok: true, amount: "0.0100000" });
   assert.equal(checkAmount("abc", "XLM").ok, false);
   assert.equal(checkAmount("10000.0000001", "XLM").ok, false);
   assert.equal(checkAmount("10000", "XLM").ok, true);
