@@ -5,6 +5,13 @@ import { useCallback, useEffect, useState } from "react";
 import { PollarGate } from "../lib/pollar.tsx";
 import { usePollarAuth } from "../hooks/usePollarAuth.ts";
 import { useAccountSetup } from "../hooks/useAccountSetup.tsx";
+import { usePayments } from "../hooks/usePayments.ts";
+import { useProfile } from "../hooks/useProfile.ts";
+import { fromHandle } from "../lib/mappers.ts";
+import { SendPayment } from "./SendPayment";
+import { ReceivePayment } from "./ReceivePayment";
+import { PaymentHistory } from "./PaymentHistory";
+import "./pagos.css";
 import {
   FRIENDBOT_URL,
   USDC_FAUCET_URL,
@@ -35,6 +42,8 @@ function WalletInner() {
   const { user, isLoading } = usePollarAuth();
   const { status: setup } = useAccountSetup();
   const address = user?.address ?? null;
+  const { profile } = useProfile();
+  const pay = usePayments();
 
   const [load, setLoad] = useState<Load>({ step: "loading" });
   const [copied, setCopied] = useState(false);
@@ -159,6 +168,15 @@ function WalletInner() {
           </p>
         )}
       </div>
+
+      <SendPayment
+        address={address}
+        balances={load.step === "ready" ? load.balances : null}
+        record={pay.record}
+        onSent={() => void refresh()}
+      />
+      <ReceivePayment username={profile ? fromHandle(profile.username) : null} />
+      {pay.enabled ? <PaymentHistory address={address} payments={pay.payments} loading={pay.loading} error={pay.error} /> : null}
 
       <div className="card" style={{ display: "grid", gap: "0.5rem" }}>
         <h2 style={{ margin: 0, fontSize: "1.1rem" }}>Fondos de prueba</h2>

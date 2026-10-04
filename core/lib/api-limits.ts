@@ -18,6 +18,9 @@ export const API_LIMITS = {
   messageSend: { max: 40, windowMs: MINUTE },
   /** Polling every 2.5 s is ~24 a minute per open tab. */
   messageRead: { max: 240, windowMs: MINUTE },
+  /** Each try asks Horizon; the client retries a pending payment a few times. */
+  paymentRecord: { max: 60, windowMs: 10 * MINUTE },
+  paymentRead: { max: 60, windowMs: MINUTE },
 } as const;
 
 export type LimitKind = keyof typeof API_LIMITS;
@@ -34,6 +37,8 @@ const MESSAGES: Record<LimitKind, string> = {
   channelCreate: "Creaste muchos canales seguidos. Espera un momento e intenta de nuevo.",
   messageSend: "Vas muy rápido: espera un momento antes de enviar más mensajes.",
   messageRead: "Demasiadas consultas. Espera un momento.",
+  paymentRecord: "Registraste muchos pagos seguidos. Espera un momento e intenta de nuevo.",
+  paymentRead: "Demasiadas consultas. Espera un momento.",
 };
 
 /** A 429 Response when `profileId` is over the limit for `kind`, else null (and the hit is recorded). */

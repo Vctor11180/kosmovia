@@ -133,6 +133,23 @@ Además de Supabase hay un segundo camino de datos, pensado para probar la etapa
 
 Variables nuevas: `KOSMOVIA_DATA_BACKEND` · `NEXT_PUBLIC_KOSMOVIA_DATA_BACKEND` · `DATABASE_URL` · `SESSION_SECRET` (y `DATABASE_SSL`, opcional).
 
+## 8 ter. Pagos entre usuarios (etapa C, solo modo "api")
+
+- **Enviar** (`/wallet` y `/pagar/<usuario>`): eliges a un @usuario (o pegas una dirección G…), el monto en USDC o XLM y una nota opcional.
+  - Antes de confirmar se revisa en Horizon que esa wallet exista y pueda recibir el activo, y ves su Kosmonauta.
+  - Pollar firma y envía con `sendPayment`: el servidor de Kosmovia nunca tiene claves.
+- **Registrar** (`POST /api/payments { hash, note }`):
+  - El servidor lee la transacción en Horizon testnet y la guarda solo si es un pago exitoso de XLM o USDC, enviado por la wallet de la sesión en las últimas 24 horas.
+  - Cada operación se guarda una sola vez (`op_id` único), así no cuenta doble ni con el hash interno ni con el externo de un fee bump.
+  - Si Horizon todavía no la ve, responde 202 y el cliente reintenta.
+- **Historial** (`GET /api/payments`): los pagos que la wallet envió o recibió, con el perfil de cada lado. La nota solo la ven quien envía y quien recibe; no va a la red.
+- **Recibir**: un link `/pagar/<usuario>?monto=5&activo=USDC` y su QR.
+- **Límites:**
+  - montos en stroops (BigInt), sin floats;
+  - máximo 10.000 por envío en testnet;
+  - límites de uso por perfil (`paymentRecord`, `paymentRead`).
+- Tabla `payments` en `db/migrations/0004_pagos.sql`. En modo Supabase todavía no hay pagos.
+
 ## 9. Orden de trabajo
 
 1. Estructura de `core/` y este documento.
