@@ -11,6 +11,8 @@ import { fromHandle } from "../lib/mappers.ts";
 import { SendPayment } from "./SendPayment";
 import { ReceivePayment } from "./ReceivePayment";
 import { PaymentHistory } from "./PaymentHistory";
+import { WelcomeGift } from "./WelcomeGift";
+import { isApiBackend } from "../lib/backend.ts";
 import "./pagos.css";
 import {
   FRIENDBOT_URL,
@@ -169,12 +171,17 @@ function WalletInner() {
         )}
       </div>
 
-      <SendPayment
-        address={address}
-        balances={load.step === "ready" ? load.balances : null}
-        record={pay.record}
-        onSent={() => void refresh()}
-      />
+      <WelcomeGift onClaimed={() => void refresh()} />
+      {isApiBackend() ? (
+        <SendPayment
+          address={address}
+          balances={load.step === "ready" ? load.balances : null}
+          record={pay.record}
+          onSent={() => void refresh()}
+        />
+      ) : (
+        <p className="card muted">Los pagos necesitan el servidor de Kosmovia (modo api).</p>
+      )}
       <ReceivePayment username={profile ? fromHandle(profile.username) : null} />
       {pay.enabled ? <PaymentHistory address={address} payments={pay.payments} loading={pay.loading} error={pay.error} /> : null}
 

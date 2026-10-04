@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useState, type FormEvent } from "react";
+import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import { usePollar } from "@pollar/react";
 import { Avatar } from "./Avatar";
 import { apiRequest } from "../lib/api-client.ts";
@@ -11,15 +11,21 @@ import {
   ADDRESS_RE,
   NOTE_MAX,
   PAYMENT_ASSETS,
+  attemptDeadlineMs,
   checkAmount,
+  classifySubmit,
   explorerTxUrl,
+  newPaymentRef,
+  paymentOptions,
   pollarAsset,
-  sendErrorMessage,
+  rejectionMessage,
+  rejectionReason,
   trimAmount,
   type PaymentAsset,
 } from "../lib/payments.ts";
+import { forgetPayment, recallPayment, rememberPayment, type InFlightPayment } from "../lib/payment-memory.ts";
 import { USERNAME_RE } from "../lib/validation.ts";
-import type { RecordResult } from "../hooks/usePayments.ts";
+import type { RecordInput, RecordResult } from "../hooks/usePayments.ts";
 
 /** Who the money goes to: a Kosmovia profile or a bare Stellar address. */
 type Recipient =
@@ -36,14 +42,20 @@ type Stage =
   | { step: "form" }
   | { step: "checking" }
   | { step: "review"; recipient: Recipient; amount: string }
-  | { step: "sending"; recipient: Recipient; amount: string }
-  | { step: "done"; recipient: Recipient; amount: string; hash: string; warning: string | null };
+  | { step: "sending"; recipient: Recipient; flight: InFlightPayment }
+  /** Money may be in flight: only verify, never send again. */
+  | { step: "verifying"; recipient: Recipient | null; flight: InFlightPayment; hash?: string }
+  | { step: "done"; recipient: Recipient | null; flight: InFlightPayment; hash: string; warning: string | null };
+
+/** Quick amounts. Tests and demos use 0.02 USDC per payment. */
+const QUICK: Record<PaymentAsset, string[]> = { USDC: ["0.02", "0.1", "1"], XLM: ["1", "5", "10"] };
+const DEFAULT_AMOUNT = "0,02";
 
 export interface SendPaymentProps {
   /** The sender's wallet (the session's). */
   address: string;
   balances: AccountBalances | null;
-  record: (hash: string, note: string) => Promise<RecordResult>;
+  record: (input: RecordInput) => Promise<RecordResult>;
   /** Called after a payment leaves the wallet, to refresh balances. */
   onSent?: () => void;
   /** Prefill from a payment link (/pagar/@usuario?monto=5&activo=USDC). */
@@ -62,7 +74,15 @@ function recipientLabel(r: Recipient): string {
   return r.kind === "profile" ? `@${r.username}` : shortAddress(r.wallet);
 }
 
-/** Send USDC or XLM to a @username (or a G-address) with Pollar, then record it on our server. */
+const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/**
+ * Send USDC or XLM to a @username (or a G-address) with Pollar, then record it
+ * on our server. The send can't go out twice (pattern from Pollar Pass): it
+ * carries a unique memo and a 5-minute lifetime, is remembered before the SDK
+ * is called, and an outcome without a hash is looked up by memo until it is
+ * found or provably never landed.
+ */
 export function SendPayment({ address, balances, record, onSent, preset }: SendPaymentProps) {
   const { sendPayment } = usePollar();
   const toId = useId();
@@ -70,11 +90,21 @@ export function SendPayment({ address, balances, record, onSent, preset }: SendP
   const noteId = useId();
   const [to, setTo] = useState(preset?.to ?? "");
   const [asset, setAsset] = useState<PaymentAsset>(preset?.asset ?? "USDC");
-  const [amount, setAmount] = useState(preset?.amount ?? "");
+  const [amount, setAmount] = useState(preset?.amount ?? DEFAULT_AMOUNT);
   const [note, setNote] = useState("");
   const [lookup, setLookup] = useState<Lookup>({ step: "idle" });
   const [stage, setStage] = useState<Stage>({ step: "form" });
   const [formError, setFormError] = useState<string | null>(null);
+  const recordRef = useRef(record);
+  recordRef.current = record;
+  const onSentRef = useRef(onSent);
+  onSentRef.current = onSent;
+
+  // A send left in flight (reload, closed tab): resume verifying it, never offer to send again.
+  useEffect(() => {
+    const flight = recallPayment(address);
+    if (flight) setStage({ step: "verifying", recipient: null, flight });
+  }, [address]);
 
   // Resolve the recipient as the user types (debounced).
   useEffect(() => {
@@ -118,6 +148,41 @@ export function SendPayment({ address, balances, record, onSent, preset }: SendP
     };
   }, [to, address]);
 
+  // Verify a payment that may be in flight until it is recorded, or provably never landed.
+  const verifying = stage.step === "verifying" ? stage : null;
+  useEffect(() => {
+    if (!verifying) return;
+    const { flight, hash, recipient } = verifying;
+    let cancelled = false;
+    void (async () => {
+      const deadline = attemptDeadlineMs(Date.parse(flight.startedAt));
+      let delay = 2_000;
+      while (!cancelled) {
+        // Past the deadline a hash Horizon never saw is searched by memo, which can say "never landed".
+        const useHash = hash && Date.now() < deadline ? hash : undefined;
+        const res = await recordRef.current({ hash: useHash, memo: flight.memo, startedAt: flight.startedAt, note: flight.note });
+        if (cancelled) return;
+        if (res.kind === "recorded") {
+          forgetPayment(address);
+          onSentRef.current?.();
+          setStage({ step: "done", recipient, flight, hash: res.payment.tx_hash, warning: null });
+          return;
+        }
+        if (res.kind === "never_landed" || res.kind === "failed") {
+          forgetPayment(address);
+          setStage({ step: "form" });
+          setFormError(res.kind === "never_landed" ? "Ese pago no llegó a la red. No se movió dinero; puedes intentarlo de nuevo." : res.error);
+          return;
+        }
+        await wait(delay);
+        delay = Math.min(delay * 1.5, 10_000);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [verifying, address]);
+
   const balance = balances?.exists ? (asset === "XLM" ? balances.xlm : balances.usdc) : null;
   const amountCheck = amount.trim() ? checkAmount(amount, asset, balance) : null;
 
@@ -125,6 +190,9 @@ export function SendPayment({ address, balances, record, onSent, preset }: SendP
     e.preventDefault();
     setFormError(null);
     if (lookup.step !== "found") return setFormError("Elige a quién le envías.");
+    if (balances && !balances.exists) {
+      return setFormError("Tu cuenta todavía no está activa en la red de prueba. Pulsa “Recargar XLM de prueba” más abajo.");
+    }
     const checked = checkAmount(amount, asset, balance);
     if (!checked.ok) return setFormError(checked.error);
     if (asset === "USDC" && balances?.exists && balances.usdc === null) {
@@ -152,55 +220,75 @@ export function SendPayment({ address, balances, record, onSent, preset }: SendP
   const onConfirm = async () => {
     if (stage.step !== "review") return;
     const { recipient, amount: value } = stage;
-    setStage({ step: "sending", recipient, amount: value });
-    let outcome: Awaited<ReturnType<typeof sendPayment>>;
+    const flight: InFlightPayment = {
+      memo: newPaymentRef(),
+      startedAt: new Date().toISOString(),
+      toWallet: recipient.wallet,
+      toLabel: recipientLabel(recipient),
+      amount: value,
+      asset,
+      note: note.trim(),
+    };
+    // Written BEFORE the SDK call: from here on a payment may exist, and a reload must find that out.
+    rememberPayment(address, flight);
+    setStage({ step: "sending", recipient, flight });
+    let outcome: Awaited<ReturnType<typeof sendPayment>> | undefined;
     try {
-      outcome = await sendPayment({ destination: recipient.wallet, amount: value, asset: pollarAsset(asset) });
-    } catch (err) {
-      outcome = { status: "error", message: err instanceof Error ? err.message : undefined };
+      outcome = await sendPayment({
+        destination: recipient.wallet,
+        amount: value,
+        asset: pollarAsset(asset),
+        options: paymentOptions(flight.memo),
+      });
+    } catch {
+      // A throw means "unknown", never "not sent".
     }
-    if (outcome.status === "error" || !outcome.hash) {
+    const verdict = classifySubmit(outcome);
+    if (verdict === "rejected") {
+      forgetPayment(address);
       setStage({ step: "review", recipient, amount: value });
-      setFormError(sendErrorMessage(outcome.status === "error" ? outcome : {}));
+      setFormError(rejectionMessage(rejectionReason(outcome) ?? "other"));
       return;
     }
-    onSent?.();
-    const saved = await record(outcome.hash, note);
-    setStage({
-      step: "done",
-      recipient,
-      amount: value,
-      hash: outcome.hash,
-      warning: saved.ok ? null : saved.error,
-    });
+    if (verdict === "sent") onSent?.();
+    setStage({ step: "verifying", recipient, flight, hash: outcome?.hash });
   };
 
   const reset = () => {
     setStage({ step: "form" });
-    setAmount("");
+    setAmount(DEFAULT_AMOUNT);
     setNote("");
     setFormError(null);
   };
 
-  if (stage.step === "done") {
+  if (stage.step === "verifying" || stage.step === "done") {
+    const { flight, recipient } = stage;
+    const done = stage.step === "done";
+    const hash = stage.hash;
     return (
-      <section className="card pay-card" aria-label="Pago enviado">
-        <h2>Pago enviado</h2>
-        <PayWho recipient={stage.recipient} />
+      <section className="card pay-card" aria-label={done ? "Pago enviado" : "Confirmando el pago"}>
+        <h2>{done ? "Pago enviado" : "Confirmando tu pago…"}</h2>
+        {recipient ? <PayWho recipient={recipient} /> : <p className="pay-who-name">Para {flight.toLabel || shortAddress(flight.toWallet)}</p>}
         <p className="pay-amount">
-          {trimAmount(stage.amount)} {asset}
+          {trimAmount(flight.amount)} {flight.asset}
         </p>
         <p role="status" className="muted">
-          Listo: el pago ya está en la red de prueba.
+          {done
+            ? "Listo: el pago ya está en la red de prueba y en tu historial."
+            : "Lo estamos buscando en la red de Stellar. No cierres esta pantalla ni lo envíes de nuevo: si lo cierras, lo seguimos buscando cuando vuelvas."}
         </p>
-        {stage.warning ? <p className="field-hint error">{stage.warning}</p> : null}
+        {done && stage.warning ? <p className="field-hint error">{stage.warning}</p> : null}
         <div className="form-actions">
-          <a className="btn" href={explorerTxUrl(stage.hash)} target="_blank" rel="noreferrer">
-            Ver en stellar.expert
-          </a>
-          <button type="button" className="btn btn-primary" onClick={reset}>
-            Enviar otro
-          </button>
+          {hash ? (
+            <a className="btn" href={explorerTxUrl(hash)} target="_blank" rel="noreferrer">
+              Ver en stellar.expert
+            </a>
+          ) : null}
+          {done ? (
+            <button type="button" className="btn btn-primary" onClick={reset}>
+              Enviar otro
+            </button>
+          ) : null}
         </div>
       </section>
     );
@@ -208,12 +296,13 @@ export function SendPayment({ address, balances, record, onSent, preset }: SendP
 
   if (stage.step === "review" || stage.step === "sending") {
     const sending = stage.step === "sending";
+    const value = sending ? stage.flight.amount : stage.amount;
     return (
       <section className="card pay-card" aria-label="Revisa el envío">
         <h2>Revisa el envío</h2>
         <PayWho recipient={stage.recipient} />
         <p className="pay-amount">
-          {trimAmount(stage.amount)} {asset}
+          {trimAmount(value)} {asset}
         </p>
         {note.trim() ? <p className="muted pay-note">“{note.trim()}”</p> : null}
         <p className="muted field-hint">Red de prueba (testnet): este dinero no tiene valor real. Un pago enviado no se puede deshacer.</p>
@@ -224,7 +313,7 @@ export function SendPayment({ address, balances, record, onSent, preset }: SendP
         ) : null}
         <div className="form-actions">
           <button type="button" className="btn btn-primary" onClick={onConfirm} disabled={sending}>
-            {sending ? "Enviando…" : `Enviar ${trimAmount(stage.amount)} ${asset}`}
+            {sending ? "Enviando…" : `Enviar ${trimAmount(value)} ${asset}`}
           </button>
           <button
             type="button"
@@ -284,12 +373,19 @@ export function SendPayment({ address, balances, record, onSent, preset }: SendP
           type="text"
           inputMode="decimal"
           autoComplete="off"
-          placeholder="0,00"
+          placeholder="0,02"
           value={amount}
           aria-invalid={amountCheck !== null && !amountCheck.ok}
           aria-describedby={`${amountId}-hint`}
           onChange={(e) => setAmount(e.target.value)}
         />
+        <div className="pay-quick" role="group" aria-label="Montos rápidos">
+          {QUICK[asset].map((q) => (
+            <button key={q} type="button" className="pay-quick-btn" data-active={amount.replace(",", ".") === q} onClick={() => setAmount(q.replace(".", ","))}>
+              {q.replace(".", ",")} {asset}
+            </button>
+          ))}
+        </div>
         <p id={`${amountId}-hint`} className={amountCheck && !amountCheck.ok ? "field-hint error" : "field-hint muted"}>
           {amountCheck && !amountCheck.ok
             ? amountCheck.error

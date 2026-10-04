@@ -8,16 +8,29 @@ import { useSupabase } from "./useSupabase.ts";
 
 export type { PaymentWire };
 
-export type RecordResult = { ok: true; payment: PaymentWire } | { ok: false; error: string };
+/**
+ * - `recorded`: verified on Horizon and saved.
+ * - `pending`: not on Horizon yet, or it can't be told yet. Ask again; never resend.
+ * - `never_landed`: searched past the attempt's deadline and it isn't there. Safe to send again.
+ * - `failed`: the server refused it (e.g. the payment failed on the network).
+ */
+export type RecordResult =
+  | { kind: "recorded"; payment: PaymentWire }
+  | { kind: "pending" }
+  | { kind: "never_landed"; error: string }
+  | { kind: "failed"; error: string };
 
-const RETRIES = 8;
-const RETRY_MS = 2_000;
-const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
+export interface RecordInput {
+  hash?: string;
+  memo: string;
+  startedAt: string;
+  note: string;
+}
 
 /**
- * The payments of the logged-in wallet (api backend) and `record`, which asks
- * the server to verify a sent payment on Horizon and save it. Horizon may take
- * a few seconds to see a fresh transaction, so a 202 is retried.
+ * The payments of the logged-in wallet (api backend) and `record`, one ask of
+ * the server to verify a sent payment on Horizon (by hash, or by memo when no
+ * hash came back) and save it.
  */
 export function usePayments() {
   const { session } = useSupabase();
@@ -44,22 +57,23 @@ export function usePayments() {
   }, [load]);
 
   const record = useCallback(
-    async (hash: string, note: string): Promise<RecordResult> => {
-      if (!enabled) return { ok: false, error: "El pago salió, pero no hay sesión para guardarlo en tu historial." };
-      for (let i = 0; i < RETRIES; i++) {
-        const res = await apiRequest<{ payment?: PaymentWire; pending?: boolean }>("/api/payments", {
-          method: "POST",
-          body: { hash, note },
-        });
-        if (res.ok && res.data.payment) {
-          const payment = res.data.payment;
-          setPayments((list) => [payment, ...list.filter((p) => p.id !== payment.id)]);
-          return { ok: true, payment };
-        }
-        if (!res.ok) return { ok: false, error: res.error };
-        await wait(RETRY_MS);
+    async (input: RecordInput): Promise<RecordResult> => {
+      // No session yet (it is restored a moment after a reload): ask again later, never treat as "not sent".
+      if (!enabled) return { kind: "pending" };
+      const res = await apiRequest<{ payment?: PaymentWire; pending?: boolean }>("/api/payments", {
+        method: "POST",
+        body: { hash: input.hash, memo: input.memo, startedAt: input.startedAt, note: input.note },
+      });
+      if (res.ok && res.data.payment) {
+        const payment = res.data.payment;
+        setPayments((list) => [payment, ...list.filter((p) => p.id !== payment.id)]);
+        return { kind: "recorded", payment };
       }
-      return { ok: false, error: "La red todavía no confirma el pago. Revisa tu historial en un momento." };
+      if (res.ok) return { kind: "pending" };
+      if (res.status === 404 && res.code === "not_found") return { kind: "never_landed", error: res.error };
+      // A lost session, network trouble, rate limits or a Horizon outage say nothing about the payment.
+      if (res.status === 0 || res.status === 401 || res.status === 429 || res.status >= 500) return { kind: "pending" };
+      return { kind: "failed", error: res.error };
     },
     [enabled],
   );

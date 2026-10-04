@@ -2,7 +2,27 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 // @ts-ignore: Node necesita la extensión .ts al importar; Next la resuelve sin ella.
-import { checkAmount, cleanNote, fromStroops, pickPayment, sendErrorMessage, toStroops, trimAmount, PAYMENT_MAX_AGE_MS } from "../lib/payments.ts";
+import {
+  MEMO_RE,
+  PAYMENT_MAX_AGE_MS,
+  SEND_TIMEOUT_SEC,
+  attemptDeadlineMs,
+  checkAmount,
+  classifySubmit,
+  cleanNote,
+  fromStroops,
+  historyReaches,
+  memoCandidates,
+  newPaymentRef,
+  paymentOptions,
+  pickPayment,
+  rejectionMessage,
+  rejectionReason,
+  toStroops,
+  trimAmount,
+} from "../lib/payments.ts";
+// @ts-ignore
+import { claimFailure, pickWelcomeRule } from "../lib/welcome.ts";
 // @ts-ignore
 import * as q from "../lib/db/sql.ts";
 // @ts-ignore
@@ -94,12 +114,76 @@ test("pickPayment rechaza lo que no se puede reclamar", () => {
   assert.equal(code([op({ id: "1; drop table" })]), "bad_payment");
 });
 
-test("los errores de envío salen en palabras simples", () => {
-  assert.match(sendErrorMessage({ resultCode: "op_underfunded" }), /saldo suficiente/);
-  assert.match(sendErrorMessage({ resultCode: "op_no_trust" }), /no puede recibir/);
-  assert.match(sendErrorMessage({ resultCode: "op_no_destination" }), /no está activa/);
-  assert.match(sendErrorMessage({ message: "User declined access" }), /Cancelaste/);
-  assert.match(sendErrorMessage({}), /No se movió dinero/);
+test("un error sin hash es 'desconocido': nunca se trata como 'no se envió'", () => {
+  assert.equal(classifySubmit({ status: "success", hash: HASH }), "sent");
+  assert.equal(classifySubmit({ status: "error", hash: HASH, code: "TX_FAILED" }), "sent");
+  assert.equal(classifySubmit(undefined), "unknown");
+  assert.equal(classifySubmit({ status: "error" }), "unknown");
+  assert.equal(classifySubmit({ status: "error", code: "TX_BAD_SEQUENCE" }), "unknown");
+  assert.equal(classifySubmit({ status: "error", details: "Request timed out" }), "unknown");
+  assert.equal(classifySubmit({ status: "pending" }), "unknown");
+  assert.equal(classifySubmit({ status: "error", code: "TX_INSUFFICIENT_BALANCE" }), "rejected");
+  assert.equal(rejectionReason({ status: "error", code: "TX_NO_TRUSTLINE" }), "destination");
+  assert.equal(rejectionReason({ status: "error", details: "User declined access" }), "declined");
+  assert.equal(rejectionReason({ status: "error", details: "No wallet connected" }), "noWallet");
+  // Only the whole message counts, never a substring.
+  assert.equal(rejectionReason({ status: "error", details: "timeout after User declined access was shown" }), null);
+  assert.match(rejectionMessage("declined"), /no se envió nada/);
+  assert.match(rejectionMessage("balance"), /XLM para la comisión/);
+});
+
+test("cada envío lleva una referencia única y una vida acotada", () => {
+  const refs = new Set(Array.from({ length: 200 }, () => newPaymentRef()));
+  assert.equal(refs.size, 200);
+  for (const r of refs) assert.match(r, MEMO_RE);
+  assert.ok(newPaymentRef().length <= 28, "un memo de texto de Stellar tiene 28 bytes como máximo");
+  assert.deepEqual(paymentOptions("kv-abcdefghijklmnop"), { memo: { type: "text", value: "kv-abcdefghijklmnop" }, timeoutSec: SEND_TIMEOUT_SEC });
+  const start = Date.parse("2026-10-04T12:00:00Z");
+  assert.equal(attemptDeadlineMs(start), start + SEND_TIMEOUT_SEC * 1000 + 2 * 60 * 1000);
+});
+
+test("buscar por memo: solo pagos que salieron de tu wallet, una vez cada uno", () => {
+  const memo = "kv-abcdefghijklmnop";
+  const rec = (over: Record<string, unknown>) => ({
+    type: "payment", from: ME, to: YOU, transaction_hash: HASH, transaction: { memo_type: "text", memo }, ...over,
+  });
+  const other = "b".repeat(64);
+  assert.deepEqual(
+    memoCandidates(
+      [
+        rec({ from: YOU, to: ME, transaction_hash: other }), // alguien te manda un pago con tu memo: no se cree
+        rec({}),
+        rec({}), // la misma tx vista dos veces
+        rec({ transaction: { memo_type: "text", memo: "kv-otro" } }),
+        rec({ type: "create_account" }),
+        rec({ transaction_hash: "no-es-un-hash" }),
+      ] as never,
+      ME,
+      memo,
+    ),
+    [HASH],
+  );
+});
+
+test("una búsqueda vacía solo vale si la red ya pasó el plazo del intento", () => {
+  const deadline = Date.parse("2026-10-04T12:07:00Z");
+  assert.equal(historyReaches(null, deadline), false);
+  assert.equal(historyReaches(deadline, deadline), false);
+  assert.equal(historyReaches(deadline - 1, deadline), false);
+  assert.equal(historyReaches(deadline + 5_000, deadline), true);
+});
+
+test("el regalo de bienvenida ofrece USDC primero y entiende los errores", () => {
+  const rules = [
+    { id: "1", assetCode: "XLM", amount: "5", claimable: true },
+    { id: "2", assetCode: "USDC", amount: "1", claimable: false },
+    { id: "3", assetCode: "USDC", amount: "0.5", claimable: true },
+  ];
+  assert.equal(pickWelcomeRule(rules)?.id, "3");
+  assert.equal(pickWelcomeRule([rules[1]]), null);
+  assert.equal(claimFailure(new Error("DISTRIBUTION_RATE_LIMIT_EXCEEDED")), "claimed");
+  assert.equal(claimFailure(new Error("DISTRIBUTION_RULE_EXHAUSTED")), "gone");
+  assert.equal(claimFailure(new Error("network")), "retry");
 });
 
 test("las consultas de pagos van parametrizadas", () => {

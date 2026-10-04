@@ -49,7 +49,7 @@ Abre **http://localhost:3000**. Tiene que ser el puerto 3000: es el único autor
 4. **Comunidades:** crea una, entra a sus canales y escribe en el chat.
 5. **Pagos** (`/wallet`):
    - carga fondos de prueba: "Recargar XLM de prueba", y USDC en faucet.circle.com;
-   - en **Enviar**, escribe el @usuario de otro del equipo, el monto y una nota. Revisa y confirma;
+   - en **Enviar**, escribe el @usuario de otro del equipo y una nota. Usa **0,02 USDC** (viene por defecto). Revisa y confirma;
    - el pago aparece en el **Historial** de los dos, con su link a stellar.expert;
    - en **Recibir**, copia tu link o muestra tu QR. Quien lo abra llega a `/pagar/tu_usuario` con el formulario listo.
 
