@@ -1,4 +1,4 @@
-import { isChannelType, type ChannelType } from "./authz.ts";
+import { isAssignableRole, isChannelType, type AssignableRole, type ChannelType } from "./authz.ts";
 import { isAvatarStyle, isValidAvatarSeed } from "./avatar/generator.ts";
 import { esCodigoValido } from "./avatar/kosmonautas.ts";
 import { isUuid } from "./ids.ts";
@@ -173,6 +173,12 @@ export function parseChannelCreate(body: unknown): Parsed<ChannelCreate> {
   const type = body.type === undefined ? "text" : body.type;
   if (!isChannelType(type)) return fail("Tipo de canal inválido.");
   return { ok: true, value: { name: name.trim(), topic: cleanTopic === "" ? null : cleanTopic, type } };
+}
+
+/** Body de PATCH .../members/[profileId]: solo admin, moderator o member (nunca owner). */
+export function parseRoleChange(body: unknown): Parsed<{ role: AssignableRole }> {
+  if (!isRecord(body) || !isAssignableRole(body.role)) return fail("El rol debe ser admin, moderator o member.");
+  return { ok: true, value: { role: body.role } };
 }
 
 export function parseMessageCreate(body: unknown): Parsed<{ content: string }> {

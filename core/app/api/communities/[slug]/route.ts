@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
  *
  * The community is public (like the Supabase `communities_select_public`
  * policy); `myRole` is the caller's role in it, or null when anonymous or not a
- * member. -> { community: CommunityRow, myRole: "owner" | "admin" | "member" | null }
+ * member. -> { community: CommunityRow, myRole: "owner" | "admin" | "moderator" | "member" | null }
  */
 export async function GET(request: Request, ctx: Params<{ slug: string }>): Promise<Response> {
   const g = gate(request, "optional");
@@ -58,6 +58,29 @@ export async function PATCH(request: Request, ctx: Params<{ slug: string }>): Pr
     const exists = await repo.getCommunityBySlug(slug);
     return exists
       ? failure(403, "Solo el dueño puede cambiar la foto de la comunidad.", "not_owner")
+      : failure(404, "Comunidad no encontrada.", "not_found");
+  });
+}
+
+/**
+ * DELETE /api/communities/[slug] (api backend)
+ *
+ * Solo el dueño borra la comunidad; se van con ella sus miembros, canales y
+ * mensajes (ON DELETE CASCADE). -> 200 { ok: true } | 403 not_owner | 404
+ */
+export async function DELETE(request: Request, ctx: Params<{ slug: string }>): Promise<Response> {
+  const g = requireGate(request);
+  if (!g.ok) return g.response;
+  const slug = cleanSlugParam((await ctx.params).slug);
+  if (!slug) return failure(404, "Comunidad no encontrada.", "not_found");
+  const limited = limitedResponse("communityManage", g.session.profileId);
+  if (limited) return limited;
+
+  return handled("DELETE /api/communities/:slug", async () => {
+    if (await repo.deleteCommunity(slug, g.session.profileId)) return json({ ok: true });
+    const exists = await repo.getCommunityBySlug(slug);
+    return exists
+      ? failure(403, "Solo el dueño puede borrar la comunidad.", "not_owner")
       : failure(404, "Comunidad no encontrada.", "not_found");
   });
 }
