@@ -36,6 +36,7 @@ export interface CommunityRow {
   description: string | null;
   owner_id: string;
   created_at?: string;
+  image?: string | null;
 }
 
 export interface ChannelRow {

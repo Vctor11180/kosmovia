@@ -4,6 +4,7 @@ import { esCodigoValido } from "./avatar/kosmonautas.ts";
 import { isUuid } from "./ids.ts";
 import { fromHandle } from "./mappers.ts";
 import { cleanMessage, communityNameError, slugError, USERNAME_RE } from "./validation.ts";
+import { checkCommunityImage } from "./community-image.ts";
 
 /**
  * Request-body and query validation for the REST routes of the "api" backend.
@@ -123,6 +124,7 @@ export interface CommunityCreate {
   slug: string;
   description: string;
   icon: string;
+  image: string | null;
 }
 
 export function parseCommunityCreate(body: unknown): Parsed<CommunityCreate> {
@@ -143,7 +145,13 @@ export function parseCommunityCreate(body: unknown): Parsed<CommunityCreate> {
   if (cleanDescription.length > DESCRIPTION_MAX) return fail(`La descripción debe tener ${DESCRIPTION_MAX} caracteres como máximo.`);
   const cleanIcon = (icon ?? "").trim();
   if (cleanIcon.length > ICON_MAX) return fail(`El ícono debe tener ${ICON_MAX} caracteres como máximo.`);
-  return { ok: true, value: { name: cleanName, slug: cleanSlug, description: cleanDescription, icon: cleanIcon } };
+  let image: string | null = null;
+  if (body.image !== undefined && body.image !== null && body.image !== "") {
+    const checked = checkCommunityImage(body.image);
+    if (!checked.ok) return fail(checked.error);
+    image = checked.value;
+  }
+  return { ok: true, value: { name: cleanName, slug: cleanSlug, description: cleanDescription, icon: cleanIcon, image } };
 }
 
 export interface ChannelCreate {

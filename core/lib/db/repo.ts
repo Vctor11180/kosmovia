@@ -82,6 +82,10 @@ export async function listMyCommunityIds(profileId: string): Promise<string[]> {
 /** The caller becomes owner and #general / #anuncios are created by a trigger. */
 export const createCommunity = (c: q.NewCommunity) => one<CommunityRow>(q.insertCommunity(c));
 
+/** Cambia la foto; null si quien llama no es el dueño. */
+export const setCommunityImage = (slug: string, ownerId: string, image: string | null) =>
+  one<CommunityRow>(q.updateCommunityImage(slug, ownerId, image));
+
 /** Joins as 'member' (never a higher role). Joining twice is fine. */
 export async function joinCommunity(communityId: string, profileId: string): Promise<void> {
   await run(q.joinCommunity(communityId, profileId));
