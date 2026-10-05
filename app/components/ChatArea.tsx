@@ -3,6 +3,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Channel, Community, Message, User } from '../types';
 import { AvatarFace } from './AvatarFace';
+import { NotificationsBell } from './NotificationsBell';
+import { WalletTransaction } from '../types';
 
 interface ChatAreaProps {
   channel: Channel;
@@ -23,6 +25,11 @@ interface ChatAreaProps {
   currentUserId?: string;
   /** Abre la tarjeta de perfil de quien escribió (avatar o nombre). */
   onOpenProfile?: (user: User) => void;
+  /** Botón de solo ícono para actualizar el saldo. */
+  onRefreshWallet?: () => void;
+  isRefreshingWallet?: boolean;
+  /** Campana de pagos enviados y recibidos. */
+  notifications?: { transactions: WalletTransaction[]; unread: number; onOpen: () => void };
 }
 
 export function ChatArea({
@@ -42,6 +49,9 @@ export function ChatArea({
   isWalletOpen,
   currentUserId,
   onOpenProfile,
+  onRefreshWallet,
+  isRefreshingWallet,
+  notifications,
 }: ChatAreaProps) {
   const [inputText, setInputText] = useState('');
   const [paidInvoices, setPaidInvoices] = useState<Record<string, boolean>>({});
@@ -90,6 +100,33 @@ export function ChatArea({
           )}
         </div>
         <div className="chat-header-actions">
+          {onRefreshWallet && (
+            <button
+              type="button"
+              className="header-icon-btn"
+              onClick={onRefreshWallet}
+              disabled={isRefreshingWallet}
+              aria-label="Actualizar saldo"
+              title="Actualizar saldo"
+            >
+              <style>{'@keyframes kvSpin{to{transform:rotate(360deg)}}'}</style>
+              <span
+                aria-hidden="true"
+                style={{ display: 'inline-block', animation: isRefreshingWallet ? 'kvSpin 0.8s linear infinite' : undefined }}
+              >
+                ↻
+              </span>
+            </button>
+          )}
+
+          {notifications && (
+            <NotificationsBell
+              transactions={notifications.transactions}
+              unread={notifications.unread}
+              onOpen={notifications.onOpen}
+            />
+          )}
+
           {onOpenWallet && (
             <button
               type="button"

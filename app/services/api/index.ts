@@ -314,6 +314,7 @@ function toTx(p: PaymentWire, me: string): WalletTransaction {
     asset: p.asset,
     timestamp: new Date(p.paid_at).toLocaleString([], { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }),
     hash: p.tx_hash,
+    paidAt: p.paid_at,
   };
 }
 

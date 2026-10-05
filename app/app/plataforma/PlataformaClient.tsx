@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import { CommunityBar } from '../../components/CommunityBar';
 import { ChannelList } from '../../components/ChannelList';
@@ -58,6 +58,10 @@ export function PlataformaPage() {
   // Tarjeta de perfil abierta (desde el chat o la lista de miembros) y "Transferir" a esa persona.
   const [profileCardUser, setProfileCardUser] = useState<User | null>(null);
   const [sendTo, setSendTo] = useState<{ recipient: string; nonce: number } | null>(null);
+  // Saldo a mano (botón ↻) y notificaciones de pagos (revisa cada 20 s).
+  const [isRefreshingWallet, setIsRefreshingWallet] = useState(false);
+  const [lastSeenPayments, setLastSeenPayments] = useState<number>(0);
+  const knownTxIds = useRef<Set<string> | null>(null);
   const errorText = (err: unknown, fallback: string) => (err instanceof Error && err.message ? err.message : fallback);
 
   // Sincronizar tema con atributo en documentElement
@@ -111,6 +115,65 @@ export function PlataformaPage() {
       isMounted = false;
     };
   }, []);
+
+  const seenKey = `kosmovia:pagos-vistos:${publicKey}`;
+  useEffect(() => {
+    try {
+      setLastSeenPayments(Number(localStorage.getItem(seenKey)) || 0);
+    } catch {
+      setLastSeenPayments(0);
+    }
+  }, [seenKey]);
+
+  /** Trae saldo e historial; avisa si llegó dinero nuevo. `silent`: sin el giro del botón. */
+  const refreshWallet = useCallback(
+    async (silent = false) => {
+      if (SERVICES_MODE !== 'api') return;
+      if (!silent) setIsRefreshingWallet(true);
+      try {
+        const [balances, txs] = await Promise.all([
+          walletService.getBalances(publicKey),
+          walletService.getTransactions(publicKey),
+        ]);
+        setBalanceUSDC(balances.usdc);
+        setBalanceXLM(balances.xlm);
+        setTransactions(txs);
+        const known = knownTxIds.current;
+        if (known) {
+          const incoming = txs.filter((t) => t.type === 'received' && !known.has(t.id));
+          if (incoming.length > 0) {
+            const t = incoming[0];
+            setPayNotice({ kind: 'ok', text: `💸 Recibiste ${t.amount} ${t.asset} de ${t.counterparty}.` });
+          }
+        }
+        knownTxIds.current = new Set(txs.map((t) => t.id));
+      } catch (err) {
+        if (!silent) setPayNotice({ kind: 'error', text: errorText(err, 'No se pudo actualizar el saldo.') });
+      } finally {
+        if (!silent) setIsRefreshingWallet(false);
+      }
+    },
+    [publicKey]
+  );
+
+  useEffect(() => {
+    if (!ready || SERVICES_MODE !== 'api') return;
+    knownTxIds.current = new Set(transactions.map((t) => t.id));
+    const timer = setInterval(() => void refreshWallet(true), 20_000);
+    return () => clearInterval(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready, refreshWallet]);
+
+  const unreadPayments = transactions.filter((t) => t.paidAt && Date.parse(t.paidAt) > lastSeenPayments).length;
+  const markPaymentsSeen = () => {
+    const now = Date.now();
+    setLastSeenPayments(now);
+    try {
+      localStorage.setItem(seenKey, String(now));
+    } catch {
+      // Sin almacenamiento: el número vuelve a aparecer al recargar.
+    }
+  };
 
   // Al abrir la billetera: saldo e historial al día (también los pagos que te llegaron).
   useEffect(() => {
@@ -378,6 +441,9 @@ export function PlataformaPage() {
         isWalletOpen={isWalletOpen}
         currentUserId={currentUser.id}
         onOpenProfile={setProfileCardUser}
+        onRefreshWallet={SERVICES_MODE === 'api' ? () => void refreshWallet() : undefined}
+        isRefreshingWallet={isRefreshingWallet}
+        notifications={{ transactions, unread: unreadPayments, onOpen: markPaymentsSeen }}
         balanceUSDC={balanceUSDC}
         theme={theme}
         onToggleTheme={handleToggleTheme}

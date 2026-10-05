@@ -48,6 +48,7 @@ export interface WalletTransaction {
   asset: 'USDC' | 'XLM';
   timestamp: string;
   hash: string;
+  paidAt?: string; // ISO, para saber qué es nuevo en las notificaciones
 }
 
 export interface SettlementRecord {
