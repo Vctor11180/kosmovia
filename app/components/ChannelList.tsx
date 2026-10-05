@@ -3,7 +3,7 @@
 import React from 'react';
 import { Community, User } from '../types';
 import { AvatarFace } from './AvatarFace';
-import { CommunityMenu } from './CommunityMenu';
+import { CommunityCard } from './CommunityCard';
 
 interface ChannelListProps {
   community: Community;
@@ -32,15 +32,15 @@ export function ChannelList({
   return (
     <aside className="channel-sidebar" aria-label="Canales">
       <div className="community-header">
-        <CommunityMenu
-          name={community.name}
-          slug={community.slug}
-          isOwner={isOwner}
-          onOpenSettings={() => onOpenSettings?.()}
-          onNotice={(text) => onNotice?.(text)}
-        />
+        <h2 className="community-title">{community.name}</h2>
       </div>
 
+      <CommunityCard
+        community={community}
+        isOwner={isOwner}
+        onOpenSettings={() => onOpenSettings?.()}
+        onNotice={(text) => onNotice?.(text)}
+      />
       <div className="channel-list-scroll">
         <div className="channel-category-row">
           <span className="channel-category-label">Canales de Texto</span>

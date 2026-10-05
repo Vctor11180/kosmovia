@@ -3,7 +3,7 @@
 import React from 'react';
 import { Community, WalletTransaction } from '../types';
 import { CommunityAvatar } from './CommunityAvatar';
-import { NotificationsBell } from './NotificationsBell';
+import { IconChat, IconCompass, IconMoon, IconPlus, IconSun } from './Icons';
 
 interface CommunityBarProps {
   communities: Community[];
@@ -23,7 +23,7 @@ interface CommunityBarProps {
 /**
  * Barra izquierda: logo de Kosmovia, Mensajes directos y Explorar, las
  * comunidades donde estás (con su foto y el relieve "portal") y "+ Crear".
- * Abajo, las acciones generales: notificaciones, Mi Wallet y modo claro/oscuro.
+ * Abajo, el modo claro/oscuro (Mi Wallet y notificaciones van arriba a la derecha).
  */
 export function CommunityBar({
   communities,
@@ -53,10 +53,10 @@ export function CommunityBar({
       </button>
 
       <button type="button" className="kv-rail-btn" disabled title="Mensajes directos · próximamente" aria-label="Mensajes directos (próximamente)">
-        💬
+        <IconChat size={20} />
       </button>
       <button type="button" className="kv-rail-btn" disabled title="Explorar comunidades · próximamente" aria-label="Explorar comunidades (próximamente)">
-        🧭
+        <IconCompass size={20} />
       </button>
 
       <div className="divider" />
@@ -80,32 +80,12 @@ export function CommunityBar({
         })}
         {onCreateCommunity ? (
           <button type="button" className="kv-rail-btn kv-rail-add" onClick={onCreateCommunity} title="Crear comunidad" aria-label="Crear comunidad">
-            +
+            <IconPlus size={20} />
           </button>
         ) : null}
       </nav>
 
       <div className="kv-rail-bottom">
-        {notifications ? (
-          <NotificationsBell
-            transactions={notifications.transactions}
-            unread={notifications.unread}
-            onOpen={notifications.onOpen}
-            placement="right"
-          />
-        ) : null}
-        {onOpenWallet ? (
-          <button
-            type="button"
-            className={`kv-rail-btn ${isWalletOpen ? 'active' : ''}`}
-            onClick={onOpenWallet}
-            aria-expanded={isWalletOpen}
-            aria-label={balanceUSDC !== undefined ? `Mi Wallet: ${balanceUSDC.toFixed(2)} USDC` : 'Mi Wallet'}
-            title="Mi Wallet"
-          >
-            👛
-          </button>
-        ) : null}
         {onToggleTheme ? (
           <button
             type="button"
@@ -114,7 +94,7 @@ export function CommunityBar({
             aria-label={theme === 'light' ? 'Cambiar a modo oscuro' : 'Cambiar a modo claro'}
             title={theme === 'light' ? 'Modo oscuro' : 'Modo claro'}
           >
-            {theme === 'light' ? '🌙' : '☀️'}
+            {theme === 'light' ? <IconMoon size={20} /> : <IconSun size={20} />}
           </button>
         ) : null}
       </div>

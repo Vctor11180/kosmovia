@@ -9,6 +9,8 @@ import type { NextConfig } from 'next';
 const API_URL = process.env.KOSMOVIA_API_URL || 'http://localhost:3001';
 
 const nextConfig: NextConfig = {
+  // El indicador de desarrollo de Next tapaba la barra izquierda.
+  devIndicators: { position: 'bottom-right' },
   async rewrites() {
     if (process.env.NEXT_PUBLIC_KOSMOVIA_SERVICES !== 'api') return [];
     return [{ source: '/api/:path*', destination: `${API_URL}/api/:path*` }];

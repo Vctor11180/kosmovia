@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
+import { IconSmile } from './Icons';
 
 /** Una selección corta de emojis: sin librerías pesadas. */
 const EMOJIS = [
@@ -40,7 +41,7 @@ export function EmojiPicker({ onPick }: { onPick: (emoji: string) => void }) {
         aria-expanded={open}
         title="Emojis"
       >
-        😊
+        <IconSmile size={20} />
       </button>
       {open ? (
         <div className="kv-menu kv-emoji-grid" role="dialog" aria-label="Elegir emoji">

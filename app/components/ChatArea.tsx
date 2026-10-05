@@ -5,6 +5,8 @@ import { Channel, Community, Message, User } from '../types';
 import { AvatarFace } from './AvatarFace';
 import { ComposerPlus } from './ComposerPlus';
 import { EmojiPicker } from './EmojiPicker';
+import { NotificationsBell } from './NotificationsBell';
+import { IconUsers, IconWallet } from './Icons';
 import { WalletTransaction } from '../types';
 
 interface ChatAreaProps {
@@ -103,6 +105,26 @@ export function ChatArea({
           )}
         </div>
         <div className="chat-header-actions">
+          {notifications && (
+            <NotificationsBell
+              transactions={notifications.transactions}
+              unread={notifications.unread}
+              onOpen={notifications.onOpen}
+            />
+          )}
+          {onOpenWallet && (
+            <button
+              type="button"
+              className={`header-icon-btn ${isWalletOpen ? 'active' : ''}`}
+              onClick={onOpenWallet}
+              aria-expanded={isWalletOpen}
+              aria-label={balanceUSDC !== undefined ? `Mi Wallet: ${balanceUSDC.toFixed(2)} USDC` : 'Mi Wallet'}
+              title={balanceUSDC !== undefined ? `Mi Wallet · ${balanceUSDC.toFixed(2)} USDC` : 'Mi Wallet'}
+              style={isWalletOpen ? { position: 'relative', zIndex: 95 } : undefined}
+            >
+              <IconWallet />
+            </button>
+          )}
           {onToggleMemberList && (
             <button
               type="button"
@@ -112,7 +134,7 @@ export function ChatArea({
               aria-pressed={isMemberListOpen}
               title="Miembros"
             >
-              👥
+              <IconUsers />
             </button>
           )}
         </div>

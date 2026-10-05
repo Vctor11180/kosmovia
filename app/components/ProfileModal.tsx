@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { User } from '../types';
 import { AvatarFace } from './AvatarFace';
+import { KosmoFrame } from './KosmoFrame';
 
 interface ProfileModalProps {
   user: User;
@@ -97,10 +98,9 @@ export function ProfileModal({
         {activeTab === 'profile' && (
           <form onSubmit={handleSubmit} className="modal-body">
             <div className="profile-banner">
-              <div className="profile-avatar-large">
+              <KosmoFrame size={132} badge={<span className="profile-online-badge" />}>
                 <AvatarFace avatar={user.avatar} name={displayName} />
-                <span className="profile-online-badge" />
-              </div>
+              </KosmoFrame>
             </div>
 
             <div className="form-group">

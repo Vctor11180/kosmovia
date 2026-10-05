@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
+import { IconCoin, IconImage, IconPaperclip, IconPlus } from './Icons';
 
 /**
  * Botón [+] a la izquierda del mensaje, como en Towns: cobro B2B y, pronto,
@@ -35,15 +36,15 @@ export function ComposerPlus({ onInvoice }: { onInvoice?: () => void }) {
         aria-haspopup="menu"
         title="Adjuntar o cobrar"
       >
-        +
+        <IconPlus size={20} />
       </button>
       {open ? (
         <div className="kv-menu kv-menu-up" role="menu" aria-label="Adjuntar">
           <button type="button" role="menuitem" className="kv-menu-item" disabled title="Próximamente">
-            📷 Foto · próximamente
+            <IconImage size={16} /> Foto · próximamente
           </button>
           <button type="button" role="menuitem" className="kv-menu-item" disabled title="Próximamente">
-            📎 Archivo (hasta 1 MB) · próximamente
+            <IconPaperclip size={16} /> Archivo (hasta 1 MB) · próximamente
           </button>
           {onInvoice ? (
             <button
@@ -55,7 +56,7 @@ export function ComposerPlus({ onInvoice }: { onInvoice?: () => void }) {
                 onInvoice();
               }}
             >
-              💸 Cobro B2B en USDC
+              <IconCoin size={16} /> Cobro B2B en USDC
             </button>
           ) : null}
         </div>

@@ -2666,15 +2666,16 @@ html, body {
   opacity: 0; transition: opacity 0.25s ease; pointer-events: none;
 }
 .kv-portal-ring {
-  position: absolute; inset: -5px; border-radius: 50%; pointer-events: none;
-  border: 1.5px solid transparent;
-  background: conic-gradient(from 0deg, var(--accent), transparent 30%, var(--accent-hover) 55%, transparent 80%, var(--accent)) border-box;
-  -webkit-mask: linear-gradient(#000 0 0) padding-box, linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor; mask-composite: exclude;
+  position: absolute; inset: -3px; border-radius: 50%; pointer-events: none; z-index: 0;
+  background: conic-gradient(from 0deg, var(--accent), transparent 30%, var(--accent-hover) 55%, transparent 80%, var(--accent));
   opacity: 0; transition: opacity 0.25s ease;
 }
-.kv-portal-img { position: relative; z-index: 1; width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
-.kv-portal-letter { position: relative; z-index: 1; font-weight: 800; font-size: 17px; color: var(--fg); }
+.kv-portal-face {
+  position: absolute; inset: 0; border-radius: 50%; z-index: 1;
+  background: radial-gradient(circle at 32% 26%, var(--surface-hover), var(--surface) 70%);
+}
+.kv-portal-img { position: relative; z-index: 2; width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+.kv-portal-letter { position: relative; z-index: 2; font-weight: 800; font-size: 17px; color: var(--fg); }
 .kv-community-btn:hover .kv-portal,
 .kv-community-btn:focus-visible .kv-portal {
   transform: translateY(-2px) scale(1.05);
@@ -2752,3 +2753,74 @@ html, body {
     box-shadow: -12px 0 32px rgba(0, 0, 0, 0.45);
   }
 }
+
+/* ==========================================================================
+   Kosmovia · tarjeta de comunidad, íconos de línea y marco del perfil
+   ========================================================================== */
+
+/* Íconos de línea: siguen el color del sitio */
+.kv-rail-btn { color: var(--muted); }
+.kv-rail-btn:hover:not(:disabled), .kv-rail-btn.active { color: var(--accent); }
+.kv-rail-add { color: var(--accent); }
+.header-icon-btn svg, .kv-composer-icon svg, .kv-menu-item svg, .kv-chip svg { flex-shrink: 0; }
+.header-icon-btn:hover { color: var(--accent); }
+.header-icon-btn.active { color: var(--accent); }
+.kv-composer-icon { color: var(--muted); }
+.kv-composer-icon:hover, .kv-composer-icon[aria-expanded="true"] { color: var(--accent); }
+.kv-composer-plus { color: var(--accent); }
+.kv-menu-item { display: flex; align-items: center; gap: 10px; }
+.kv-menu-item svg { color: var(--accent); }
+
+/* Foto mediana de la comunidad: el borde "portal" siempre encendido */
+.kv-portal-featured::before { opacity: 1; }
+.kv-portal-featured .kv-portal-ring { opacity: 0.95; }
+@media (prefers-reduced-motion: no-preference) {
+  .kv-portal-featured .kv-portal-ring { animation: kvSpin 9s linear infinite; }
+}
+
+/* Tarjeta de la comunidad, arriba de los canales */
+.kv-community-card {
+  margin: 12px 12px 4px; padding: 14px 12px 12px;
+  background: var(--surface-alt); border: 1px solid var(--line); border-radius: 14px;
+  display: grid; gap: 12px;
+}
+.kv-community-card-top { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.kv-community-card-text { display: grid; gap: 4px; min-width: 0; }
+.kv-community-desc {
+  margin: 0; font-size: 13px; line-height: 1.35; color: var(--fg);
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.kv-community-meta { font-size: 11px; color: var(--muted); }
+.kv-community-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.kv-chip {
+  display: inline-flex; align-items: center; gap: 5px; min-height: 30px; padding: 3px 9px;
+  border-radius: 999px; border: 1px solid var(--line); background: var(--surface);
+  color: var(--fg); font: inherit; font-size: 11.5px; font-weight: 600; cursor: pointer; white-space: nowrap;
+}
+.kv-chip svg { color: var(--accent); }
+.kv-chip:hover, .kv-chip[aria-expanded="true"] { border-color: var(--accent); }
+.kv-chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* Marco del Kosmonauta en el perfil: rectángulo con esquinas redondeadas y el borde "portal" */
+.kv-frame {
+  position: relative; margin: 0 auto; padding: 3px; border-radius: 26px; overflow: hidden; isolation: isolate;
+  box-shadow: 0 0 28px var(--accent-glow), 0 10px 30px rgba(0, 0, 0, 0.45);
+}
+.kv-frame::before {
+  content: ""; position: absolute; inset: -50%; z-index: -1;
+  background: conic-gradient(from 0deg, var(--accent), transparent 25%, var(--accent-hover) 50%, transparent 75%, var(--accent));
+}
+@media (prefers-reduced-motion: no-preference) {
+  .kv-frame::before { animation: kvSpin 8s linear infinite; }
+}
+.kv-frame-inner {
+  width: 100%; height: 100%; border-radius: 23px; overflow: hidden;
+  background: radial-gradient(circle at 32% 26%, var(--surface-hover), var(--surface) 70%);
+  display: flex; align-items: center; justify-content: center; font-size: 40px; font-weight: 800; color: var(--fg);
+}
+.kv-frame-inner img { border-radius: 0 !important; image-rendering: pixelated; }
+.kv-frame .profile-online-badge { z-index: 2; }
+
+/* El marco del perfil (más grande) se apoya sobre el banner sin tapar el formulario */
+.profile-banner:has(.kv-frame) { height: 72px; margin-bottom: 88px; }
+.profile-banner .kv-frame { position: absolute; left: 50%; bottom: -78px; margin: 0; transform: translateX(-50%); }

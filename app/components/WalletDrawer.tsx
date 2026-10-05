@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { SettlementRecord, WalletTransaction } from '../types';
 import { QrCode } from './QrCode';
 import { RecipientPreview } from './RecipientPreview';
+import { IconRefresh } from './Icons';
 
 interface WalletDrawerProps {
   isOpen: boolean;
@@ -160,8 +161,8 @@ export function WalletDrawer({
                         aria-label="Actualizar saldo"
                         title="Actualizar saldo"
                       >
-                        <span aria-hidden="true" className={isRefreshing ? 'kv-spin' : undefined}>
-                          ↻
+                        <span aria-hidden="true" className={isRefreshing ? 'kv-spin' : undefined} style={{ display: 'inline-flex' }}>
+                          <IconRefresh size={16} />
                         </span>
                       </button>
                     ) : null}

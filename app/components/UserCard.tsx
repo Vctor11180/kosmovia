@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { User } from '../types';
 import { profileService } from '../services';
 import { AvatarFace } from './AvatarFace';
+import { KosmoFrame } from './KosmoFrame';
 
 interface UserCardProps {
   /** A quién se tocó (lo que ya se sabe: nombre, @usuario, avatar). */
@@ -87,9 +88,9 @@ export function UserCard({ user, role, isSelf, onClose, onTransfer, onEditProfil
 
         <div className="modal-body">
           <div className="profile-banner">
-            <div className="profile-avatar-large">
+            <KosmoFrame size={116}>
               <AvatarFace avatar={u.avatar} name={u.displayName} />
-            </div>
+            </KosmoFrame>
           </div>
 
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'center', marginBottom: 12 }}>

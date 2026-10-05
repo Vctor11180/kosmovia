@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { WalletTransaction } from '../types';
+import { IconBell } from './Icons';
 
 interface NotificationsBellProps {
   /** Pagos enviados y recibidos, más nuevos primero. */
@@ -55,7 +56,7 @@ export function NotificationsBell({ transactions, unread, onOpen, placement = 'd
         title="Notificaciones de pagos"
         style={{ position: 'relative' }}
       >
-        🔔
+        <IconBell />
         {unread > 0 ? (
           <span className="tab-pending-badge" style={{ position: 'absolute', top: -6, right: -6 }}>
             {unread > 9 ? '9+' : unread}

@@ -483,10 +483,6 @@ export function PlataformaPage() {
         activeCommunityId={activeCommunity.id}
         onSelectCommunity={handleSelectCommunity}
         onCreateCommunity={() => setIsCreateCommunityOpen(true)}
-        onOpenWallet={() => setIsWalletOpen((prev) => !prev)}
-        isWalletOpen={isWalletOpen}
-        balanceUSDC={balanceUSDC}
-        notifications={{ transactions, unread: unreadPayments, onOpen: markPaymentsSeen }}
         theme={theme}
         onToggleTheme={handleToggleTheme}
       />
