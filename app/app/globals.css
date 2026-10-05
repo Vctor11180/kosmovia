@@ -2607,3 +2607,148 @@ html, body {
 
 
 
+
+/* ==========================================================================
+   Kosmovia · barra izquierda, portal de comunidades, menús y campo de mensaje
+   (borrador de integración; usa solo las variables del tema, sirve en claro y oscuro)
+   ========================================================================== */
+
+@keyframes kvSpin { to { transform: rotate(360deg); } }
+.kv-spin { display: inline-block; animation: kvSpin 0.8s linear infinite; }
+
+/* Barra izquierda */
+.community-bar { overflow: visible; }
+.kv-rail-logo {
+  width: 48px; height: 48px; border-radius: 14px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--surface); border: 1px solid var(--line); color: var(--accent);
+  cursor: pointer; transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+.kv-rail-logo:hover { box-shadow: 0 0 18px var(--accent-glow); transform: translateY(-1px); }
+.kv-rail-btn {
+  width: 44px; height: 44px; border-radius: 14px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--surface); border: 1px solid var(--line); color: var(--fg);
+  font-size: 18px; cursor: pointer; transition: border-color 0.15s ease, background 0.15s ease;
+}
+.kv-rail-btn:hover:not(:disabled), .kv-rail-btn.active { border-color: var(--accent); background: var(--surface-hover); }
+.kv-rail-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.kv-rail-add { border-style: dashed; color: var(--accent); font-size: 24px; font-weight: 300; }
+.kv-rail-communities {
+  flex: 1; min-height: 0; width: 100%;
+  display: flex; flex-direction: column; align-items: center; gap: 12px;
+  overflow-y: auto; overflow-x: visible; padding: 6px 0; scrollbar-width: none;
+}
+.kv-rail-communities::-webkit-scrollbar { display: none; }
+.kv-rail-bottom {
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  padding-top: 10px; border-top: 1px solid var(--line); width: 100%;
+}
+.kv-rail-btn:focus-visible, .kv-rail-logo:focus-visible, .kv-community-btn:focus-visible {
+  outline: 2px solid var(--accent); outline-offset: 3px;
+}
+
+/* Comunidad = "portal" (el brillo y el anillo del logo de la landing) */
+.community-icon-btn.kv-community-btn,
+.community-icon-btn.kv-community-btn.active {
+  width: 48px; height: 48px; padding: 0; border: 0; background: transparent; box-shadow: none; overflow: visible;
+}
+.kv-portal {
+  position: relative; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle at 32% 26%, var(--surface-hover), var(--surface) 70%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), inset 0 -2px 6px rgba(0, 0, 0, 0.35), 0 4px 12px rgba(0, 0, 0, 0.35);
+  transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.25s ease;
+}
+.kv-portal::before {
+  content: ""; position: absolute; inset: -10px; border-radius: 50%;
+  background: radial-gradient(circle, var(--accent-glow) 0%, transparent 65%);
+  opacity: 0; transition: opacity 0.25s ease; pointer-events: none;
+}
+.kv-portal-ring {
+  position: absolute; inset: -5px; border-radius: 50%; pointer-events: none;
+  border: 1.5px solid transparent;
+  background: conic-gradient(from 0deg, var(--accent), transparent 30%, var(--accent-hover) 55%, transparent 80%, var(--accent)) border-box;
+  -webkit-mask: linear-gradient(#000 0 0) padding-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor; mask-composite: exclude;
+  opacity: 0; transition: opacity 0.25s ease;
+}
+.kv-portal-img { position: relative; z-index: 1; width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+.kv-portal-letter { position: relative; z-index: 1; font-weight: 800; font-size: 17px; color: var(--fg); }
+.kv-community-btn:hover .kv-portal,
+.kv-community-btn:focus-visible .kv-portal {
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16), 0 8px 20px rgba(0, 0, 0, 0.45), 0 0 18px var(--accent-glow);
+}
+.kv-community-btn:hover .kv-portal::before,
+.kv-community-btn.active .kv-portal::before { opacity: 1; }
+.kv-community-btn:hover .kv-portal-ring,
+.kv-community-btn.active .kv-portal-ring { opacity: 0.9; }
+@media (prefers-reduced-motion: no-preference) {
+  .kv-community-btn:hover .kv-portal-ring { animation: kvSpin 6s linear infinite; }
+}
+
+/* Menú de la comunidad (nombre en la barra de canales) y menús emergentes */
+.kv-community-menu { position: relative; width: 100%; }
+.kv-community-menu-trigger {
+  width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  background: none; border: 0; padding: 0; color: inherit; cursor: pointer; text-align: left;
+}
+.kv-community-menu-trigger .community-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.kv-chevron { color: var(--muted); font-size: 12px; }
+.kv-menu {
+  position: absolute; top: calc(100% + 6px); left: 0; z-index: 120; min-width: 230px;
+  display: grid; gap: 2px; padding: 6px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+}
+.kv-menu-up { top: auto; bottom: calc(100% + 10px); }
+.kv-menu-item {
+  min-height: 40px; padding: 8px 12px; border-radius: 8px; text-align: left;
+  background: none; border: 0; color: var(--fg); font: inherit; font-size: 14px; cursor: pointer;
+}
+.kv-menu-item:hover:not(:disabled), .kv-menu-item:focus-visible { background: var(--surface-hover); outline: none; }
+.kv-menu-item:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Campo de mensaje: [+] a la izquierda, emoji a la derecha */
+.kv-composer-icon {
+  width: 36px; height: 36px; flex-shrink: 0; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  background: transparent; border: 1px solid var(--line); color: var(--fg); font-size: 18px; cursor: pointer;
+}
+.kv-composer-icon:hover, .kv-composer-icon[aria-expanded="true"] { border-color: var(--accent); }
+.kv-composer-plus { color: var(--accent); font-size: 22px; font-weight: 300; }
+.kv-emoji-grid {
+  top: auto; bottom: calc(100% + 10px); left: auto; right: 0; min-width: 0;
+  width: min(312px, 80vw); max-height: 240px; overflow-y: auto;
+  grid-template-columns: repeat(8, 1fr);
+}
+.kv-emoji { width: 34px; height: 34px; border: 0; border-radius: 8px; background: none; font-size: 20px; cursor: pointer; }
+.kv-emoji:hover, .kv-emoji:focus-visible { background: var(--surface-hover); outline: none; }
+
+/* Mensajes seguidos de la misma persona: sin avatar ni nombre */
+.message-item.kv-grouped { margin-top: -14px; }
+.kv-avatar-spacer { width: 38px; flex-shrink: 0; display: flex; justify-content: center; padding-top: 3px; }
+.kv-grouped-time { font-size: 10px; color: var(--muted); opacity: 0; transition: opacity 0.1s ease; }
+.message-item.kv-grouped:hover .kv-grouped-time { opacity: 1; }
+
+/* Encabezado: el tema se recorta en vez de empujar todo */
+.chat-header-info { flex: 1; }
+.chat-header-title { white-space: nowrap; }
+.chat-header-topic { min-width: 0; }
+
+/* Botón de actualizar de Mi Wallet */
+.kv-refresh-btn {
+  width: 30px; height: 30px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center;
+  background: transparent; border: 1px solid var(--line); color: var(--accent); font-size: 16px; cursor: pointer;
+}
+.kv-refresh-btn:hover:not(:disabled) { border-color: var(--accent); }
+.kv-refresh-btn:disabled { opacity: 0.7; cursor: progress; }
+
+/* Pantallas medianas: la lista de miembros flota sobre el chat en vez de apretarlo */
+@media (max-width: 1199px) and (min-width: 769px) {
+  .member-sidebar {
+    position: absolute; right: 0; top: 0; bottom: 0; z-index: 35;
+    box-shadow: -12px 0 32px rgba(0, 0, 0, 0.45);
+  }
+}

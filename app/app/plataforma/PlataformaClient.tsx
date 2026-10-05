@@ -11,6 +11,8 @@ import { WalletDrawer } from '../../components/WalletDrawer';
 import { CreateChannelModal } from '../../components/CreateChannelModal';
 import { QuickInvoiceModal } from '../../components/QuickInvoiceModal';
 import { UserCard } from '../../components/UserCard';
+import { CreateCommunityModal } from '../../components/CreateCommunityModal';
+import { CommunitySettingsModal } from '../../components/CommunitySettingsModal';
 import { Channel, Community, Message, SettlementRecord, User, WalletTransaction } from '../../types';
 import {
   authService,
@@ -62,6 +64,13 @@ export function PlataformaPage() {
   const [isRefreshingWallet, setIsRefreshingWallet] = useState(false);
   const [lastSeenPayments, setLastSeenPayments] = useState<number>(0);
   const knownTxIds = useRef<Set<string> | null>(null);
+  const [isCreateCommunityOpen, setIsCreateCommunityOpen] = useState(false);
+  const [isCommunitySettingsOpen, setIsCommunitySettingsOpen] = useState(false);
+
+  // En pantallas chicas la lista de miembros arranca oculta (el chat necesita el espacio).
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.innerWidth < 1200) setIsMemberListOpen(false);
+  }, []);
   const errorText = (err: unknown, fallback: string) => (err instanceof Error && err.message ? err.message : fallback);
 
   // Sincronizar tema con atributo en documentElement
@@ -77,7 +86,7 @@ export function PlataformaPage() {
 
     async function loadInitialData() {
       try {
-        const [user, comms, pk, balances, txs, stls] = await Promise.all([
+        let [user, comms, pk, balances, txs, stls] = await Promise.all([
           authService.getCurrentUser(),
           communityService.getCommunities(),
           walletService.getPublicKey(),
@@ -88,6 +97,25 @@ export function PlataformaPage() {
 
         if (!isMounted) return;
 
+        // Link de invitación: /plataforma?c=<slug> te une y abre esa comunidad.
+        const invited = new URLSearchParams(window.location.search).get('c');
+        let invitedTarget = invited ? comms.find((c) => c.slug === invited) : undefined;
+        if (invited && !invitedTarget && communityService.joinBySlug) {
+          try {
+            await communityService.joinBySlug(invited);
+            comms = await communityService.getCommunities();
+            invitedTarget = comms.find((c) => c.slug === invited);
+            if (invitedTarget) setPayNotice({ kind: 'ok', text: `Te uniste a ${invitedTarget.name}.` });
+          } catch (err) {
+            setPayNotice({ kind: 'error', text: errorText(err, 'No pudimos unirte a esa comunidad.') });
+          }
+        }
+        if (invitedTarget) {
+          setActiveCommunityId(invitedTarget.id);
+          if (invitedTarget.channels.length > 0) setActiveChannelId(invitedTarget.channels[0].id);
+          window.history.replaceState(null, '', '/plataforma');
+        }
+
         setCurrentUser(user);
         setCommunities(comms);
         setPublicKey(pk);
@@ -96,7 +124,7 @@ export function PlataformaPage() {
         setTransactions(txs);
         setSettlements(stls);
 
-        if (comms.length > 0 && !comms.some((c) => c.id === activeCommunityId)) {
+        if (!invitedTarget && comms.length > 0 && !comms.some((c) => c.id === activeCommunityId)) {
           setActiveCommunityId(comms[0].id);
           if (comms[0].channels.length > 0) {
             setActiveChannelId(comms[0].channels[0].id);
@@ -301,6 +329,32 @@ export function PlataformaPage() {
     }
   };
 
+  const handleCreateCommunity = async (input: { name: string; slug: string; description: string; image?: string }): Promise<boolean> => {
+    try {
+      const created = await communityService.createCommunity({ ...input, icon: '' });
+      setCommunities((prev) => [...prev, created]);
+      setActiveCommunityId(created.id);
+      if (created.channels.length > 0) setActiveChannelId(created.channels[0].id);
+      setPayNotice({ kind: 'ok', text: `Comunidad ${created.name} creada.` });
+      return true;
+    } catch (err) {
+      setPayNotice({ kind: 'error', text: errorText(err, 'No se pudo crear la comunidad.') });
+      return false;
+    }
+  };
+
+  const handleSaveCommunityImage = async (image: string | null): Promise<boolean> => {
+    try {
+      const updated = await communityService.updateImage(activeCommunity.id, image);
+      setCommunities((prev) => prev.map((c) => (c.id === updated.id ? { ...c, image: updated.image } : c)));
+      setPayNotice({ kind: 'ok', text: 'Foto de la comunidad actualizada.' });
+      return true;
+    } catch (err) {
+      setPayNotice({ kind: 'error', text: errorText(err, 'No se pudo guardar la foto.') });
+      return false;
+    }
+  };
+
   const handleCreateInvoice = (amount: number, concept: string) => {
     const payload = JSON.stringify({ amount, concept });
     handleSendMessage(`[COBRO_B2B:${payload}]`);
@@ -398,6 +452,9 @@ export function PlataformaPage() {
     m.id === currentUser.id ? { ...m, ...currentUser, role: m.role ?? currentUser.role } : m
   );
 
+  const isCommunityOwner =
+    SERVICES_MODE !== 'api' || currentMembers.find((m) => m.id === currentUser.id)?.role === 'admin';
+
   if (!ready) {
     return (
       <div className="login-page-container">
@@ -425,6 +482,13 @@ export function PlataformaPage() {
         communities={communities}
         activeCommunityId={activeCommunity.id}
         onSelectCommunity={handleSelectCommunity}
+        onCreateCommunity={() => setIsCreateCommunityOpen(true)}
+        onOpenWallet={() => setIsWalletOpen((prev) => !prev)}
+        isWalletOpen={isWalletOpen}
+        balanceUSDC={balanceUSDC}
+        notifications={{ transactions, unread: unreadPayments, onOpen: markPaymentsSeen }}
+        theme={theme}
+        onToggleTheme={handleToggleTheme}
       />
 
       <ChannelList
@@ -434,6 +498,9 @@ export function PlataformaPage() {
         currentUser={currentUser}
         onOpenProfile={() => setIsProfileModalOpen(true)}
         onOpenCreateChannel={() => setIsCreateChannelOpen(true)}
+        isOwner={isCommunityOwner}
+        onOpenSettings={() => setIsCommunitySettingsOpen(true)}
+        onNotice={(text) => setPayNotice({ kind: 'ok', text })}
       />
 
       <ChatArea
@@ -499,12 +566,27 @@ export function PlataformaPage() {
         settlements={settlements}
         onDisbursePending={handleDisbursePending}
         sendTo={sendTo}
+        onRefresh={SERVICES_MODE === 'api' ? () => void refreshWallet() : undefined}
+        isRefreshing={isRefreshingWallet}
       />
 
       <CreateChannelModal
         isOpen={isCreateChannelOpen}
         onClose={() => setIsCreateChannelOpen(false)}
         onCreate={handleCreateChannel}
+      />
+
+      <CreateCommunityModal
+        isOpen={isCreateCommunityOpen}
+        onClose={() => setIsCreateCommunityOpen(false)}
+        onCreate={handleCreateCommunity}
+      />
+
+      <CommunitySettingsModal
+        community={activeCommunity}
+        isOpen={isCommunitySettingsOpen}
+        onClose={() => setIsCommunitySettingsOpen(false)}
+        onSaveImage={handleSaveCommunityImage}
       />
 
       <QuickInvoiceModal

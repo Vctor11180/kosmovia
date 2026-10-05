@@ -3,7 +3,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Channel, Community, Message, User } from '../types';
 import { AvatarFace } from './AvatarFace';
-import { NotificationsBell } from './NotificationsBell';
+import { ComposerPlus } from './ComposerPlus';
+import { EmojiPicker } from './EmojiPicker';
 import { WalletTransaction } from '../types';
 
 interface ChatAreaProps {
@@ -96,75 +97,20 @@ export function ChatArea({
             <span>{channel.name}</span>
           </div>
           {channel.topic && (
-            <span className="chat-header-topic">{channel.topic}</span>
+            <span className="chat-header-topic" title={channel.topic}>
+              {channel.topic}
+            </span>
           )}
         </div>
         <div className="chat-header-actions">
-          {onRefreshWallet && (
-            <button
-              type="button"
-              className="header-icon-btn"
-              onClick={onRefreshWallet}
-              disabled={isRefreshingWallet}
-              aria-label="Actualizar saldo"
-              title="Actualizar saldo"
-            >
-              <style>{'@keyframes kvSpin{to{transform:rotate(360deg)}}'}</style>
-              <span
-                aria-hidden="true"
-                style={{ display: 'inline-block', animation: isRefreshingWallet ? 'kvSpin 0.8s linear infinite' : undefined }}
-              >
-                ↻
-              </span>
-            </button>
-          )}
-
-          {notifications && (
-            <NotificationsBell
-              transactions={notifications.transactions}
-              unread={notifications.unread}
-              onOpen={notifications.onOpen}
-            />
-          )}
-
-          {onOpenWallet && (
-            <button
-              type="button"
-              className="header-wallet-pill"
-              onClick={onOpenWallet}
-              title={isWalletOpen ? 'Cerrar Mi Wallet' : 'Abrir Mi Wallet'}
-              aria-expanded={isWalletOpen}
-              style={isWalletOpen ? { position: 'relative', zIndex: 95 } : undefined}
-            >
-              <span className="wallet-dot" />
-              <span style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.15, textAlign: 'left' }}>
-                <span>Mi Wallet</span>
-                <small style={{ fontSize: 11, fontWeight: 600, opacity: 0.8 }}>
-                  {balanceUSDC !== undefined ? `${balanceUSDC.toFixed(2)} USDC` : '…'}
-                </small>
-              </span>
-            </button>
-          )}
-
-          {onToggleTheme && (
-            <button
-              type="button"
-              className="header-icon-btn"
-              onClick={onToggleTheme}
-              title={theme === 'light' ? 'Cambiar a Modo Oscuro' : 'Cambiar a Modo Claro'}
-            >
-              {theme === 'light' ? '🌙' : '☀️'}
-            </button>
-          )}
-
-          <div className="header-badge">{community.name}</div>
-
           {onToggleMemberList && (
             <button
               type="button"
               className={`header-icon-btn ${isMemberListOpen ? 'active' : ''}`}
               onClick={onToggleMemberList}
-              title="Mostrar/Ocultar lista de miembros"
+              aria-label={isMemberListOpen ? 'Ocultar miembros' : 'Mostrar miembros'}
+              aria-pressed={isMemberListOpen}
+              title="Miembros"
             >
               👥
             </button>
@@ -200,7 +146,7 @@ export function ChatArea({
             </div>
           </div>
         ) : (
-          messages.map((msg) => {
+          messages.map((msg, index) => {
             // Detectar si el mensaje es una tarjeta de cobro B2B interactiva
             const isInvoice = msg.content.startsWith('[COBRO_B2B:');
             let invoiceData: { amount: number; concept: string } | null = null;
@@ -218,12 +164,20 @@ export function ChatArea({
               }
             }
 
+            const prev = index > 0 ? messages[index - 1] : null;
+            const grouped =
+              !invoiceData && prev !== null && prev.author.id === msg.author.id && !prev.content.startsWith('[COBRO_B2B:');
             const isPaid = paidInvoices[msg.id];
             const isMine = currentUserId !== undefined && msg.author.id === currentUserId;
             const isPaying = payingInvoice === msg.id;
 
             return (
-              <article key={msg.id} className="message-item">
+              <article key={msg.id} className={`message-item ${grouped ? 'kv-grouped' : ''}`}>
+                {grouped ? (
+                  <div className="kv-avatar-spacer" aria-hidden="true">
+                    <time className="kv-grouped-time">{msg.createdAt}</time>
+                  </div>
+                ) : (
                 <div className="msg-avatar">
                   <button
                     type="button"
@@ -234,7 +188,9 @@ export function ChatArea({
                     <AvatarFace avatar={msg.author.avatar} name={msg.author.displayName} />
                   </button>
                 </div>
+                )}
                 <div className="msg-body">
+                  {grouped ? null : (
                   <div className="msg-header">
                     <button
                       type="button"
@@ -245,11 +201,10 @@ export function ChatArea({
                     >
                       {msg.author.displayName}
                     </button>
-                    {msg.author.role && (
-                      <span className={`msg-role-tag ${msg.author.role}`}>{msg.author.role}</span>
-                    )}
+                    {msg.author.role === 'admin' && <span className="msg-role-tag admin">admin</span>}
                     <time className="msg-time">{msg.createdAt}</time>
                   </div>
+                  )}
 
                   {invoiceData ? (
                     <div className="invoice-card">
@@ -287,24 +242,17 @@ export function ChatArea({
 
       <footer className="chat-input-container">
         <form onSubmit={handleSubmit} className="chat-input-box">
-          {onOpenQuickInvoice && (
-            <button
-              type="button"
-              className="btn-quick-tip"
-              onClick={onOpenQuickInvoice}
-              title="Emitir solicitud de cobro B2B en USDC"
-            >
-              💸
-            </button>
-          )}
+          <ComposerPlus onInvoice={onOpenQuickInvoice} />
           <input
             type="text"
             className="chat-input-field"
             maxLength={2000}
-            placeholder={`Enviar mensaje a #${channel.name}... (o usa 💸 para emitir un cobro)`}
+            placeholder={`Mensaje en #${channel.name}`}
+            aria-label={`Mensaje en #${channel.name}`}
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
           />
+          <EmojiPicker onPick={(emoji) => setInputText((t) => t + emoji)} />
           <button
             type="submit"
             className="chat-send-btn"

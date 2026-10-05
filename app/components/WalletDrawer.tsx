@@ -18,6 +18,9 @@ interface WalletDrawerProps {
   onDisbursePending?: () => void;
   /** Abrir directo en "Enviar" con un destinatario (desde el perfil). `nonce` cambia en cada pedido. */
   sendTo?: { recipient: string; nonce: number } | null;
+  /** Botón ↻ (solo ícono) junto al saldo. */
+  onRefresh?: () => void;
+  isRefreshing?: boolean;
 }
 
 export function WalletDrawer({
@@ -31,6 +34,8 @@ export function WalletDrawer({
   settlements = [],
   onDisbursePending,
   sendTo,
+  onRefresh,
+  isRefreshing,
 }: WalletDrawerProps) {
   const [activeTab, setActiveTab] = useState<'wallet' | 'settlements'>('wallet');
   const [view, setView] = useState<'overview' | 'send' | 'receive'>('overview');
@@ -144,7 +149,23 @@ export function WalletDrawer({
             {view === 'overview' && (
               <div className="wallet-drawer-body">
                 <div className="wallet-balance-card">
-                  <span className="wallet-balance-label">Saldo Disponible</span>
+                  <span className="wallet-balance-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    Saldo Disponible
+                    {onRefresh ? (
+                      <button
+                        type="button"
+                        className="kv-refresh-btn"
+                        onClick={onRefresh}
+                        disabled={isRefreshing}
+                        aria-label="Actualizar saldo"
+                        title="Actualizar saldo"
+                      >
+                        <span aria-hidden="true" className={isRefreshing ? 'kv-spin' : undefined}>
+                          ↻
+                        </span>
+                      </button>
+                    ) : null}
+                  </span>
                   <div className="wallet-balance-value">
                     {balanceUSDC.toFixed(2)} <span className="wallet-asset-tag">USDC</span>
                   </div>

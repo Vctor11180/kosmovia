@@ -130,7 +130,7 @@ test("profile update: only the five editable fields, at least one, validated", (
 test("community create: same rules as the form and the CHECKs", () => {
   const ok = parseCommunityCreate({ name: " Prueba Kosmovia ", slug: "prueba-kosmovia", description: "d", icon: "" });
   assert.ok(ok.ok);
-  if (ok.ok) assert.deepEqual(ok.value, { name: "Prueba Kosmovia", slug: "prueba-kosmovia", description: "d", icon: "" });
+  if (ok.ok) assert.deepEqual(ok.value, { name: "Prueba Kosmovia", slug: "prueba-kosmovia", description: "d", icon: "", image: null });
   for (const bad of [
     null,
     {},
@@ -141,6 +141,7 @@ test("community create: same rules as the form and the CHECKs", () => {
     { name: "Ok", slug: "ok-slug", icon: "x".repeat(17) },
     { name: "Ok", slug: "ok-slug", description: 5 },
     { name: "n".repeat(51), slug: "ok-slug" },
+    { name: "Ok", slug: "ok-slug", image: "data:image/svg+xml;base64,PHN2Zy8+" },
   ]) {
     assert.equal(parseCommunityCreate(bad).ok, false, JSON.stringify(bad));
   }

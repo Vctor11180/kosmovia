@@ -1,5 +1,7 @@
 import { cleanSlugParam } from "../../../../lib/api-input.ts";
-import { failure, gate, handled, json, type Params } from "../../../../lib/api-route.ts";
+import { failure, gate, handled, json, readJsonBody, requireGate, type Params } from "../../../../lib/api-route.ts";
+import { limitedResponse } from "../../../../lib/api-limits.ts";
+import { checkCommunityImage } from "../../../../lib/community-image.ts";
 import * as repo from "../../../../lib/db/repo.ts";
 
 export const runtime = "nodejs";
@@ -23,5 +25,39 @@ export async function GET(request: Request, ctx: Params<{ slug: string }>): Prom
     if (!community) return failure(404, "Comunidad no encontrada.", "not_found");
     const myRole = g.session ? await repo.getRole(community.id, g.session.profileId) : null;
     return json({ community, myRole });
+  });
+}
+
+/**
+ * PATCH /api/communities/[slug] { image: dataUrl | null } (api backend)
+ *
+ * Solo el dueño cambia (o quita) la foto. La imagen se revisa por sus bytes.
+ * -> { community } | 403 not_owner | 404
+ */
+export async function PATCH(request: Request, ctx: Params<{ slug: string }>): Promise<Response> {
+  const g = requireGate(request);
+  if (!g.ok) return g.response;
+  const limited = limitedResponse("communityCreate", g.session.profileId);
+  if (limited) return limited;
+  const slug = cleanSlugParam((await ctx.params).slug);
+  if (!slug) return failure(404, "Comunidad no encontrada.", "not_found");
+
+  const body = await readJsonBody(request, 100_000);
+  if (!body.ok) return body.response;
+  const raw = (body.value ?? {}) as { image?: unknown };
+  let image: string | null = null;
+  if (raw.image !== null) {
+    const checked = checkCommunityImage(raw.image);
+    if (!checked.ok) return failure(400, checked.error, "invalid_input");
+    image = checked.value;
+  }
+
+  return handled("PATCH /api/communities/:slug", async () => {
+    const community = await repo.setCommunityImage(slug, g.session.profileId, image);
+    if (community) return json({ community });
+    const exists = await repo.getCommunityBySlug(slug);
+    return exists
+      ? failure(403, "Solo el dueño puede cambiar la foto de la comunidad.", "not_owner")
+      : failure(404, "Comunidad no encontrada.", "not_found");
   });
 }

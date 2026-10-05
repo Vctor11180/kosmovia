@@ -1,0 +1,133 @@
+/* Editor de Kosmonautas (usa solo las variables del tema de la app) */
+.gen {
+  margin: 0;
+  min-width: 0;
+  display: grid;
+  gap: 1.25rem;
+  grid-template-columns: minmax(0, 1fr);
+  background: var(--surface-alt);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 1.25rem;
+  color: var(--fg);
+  text-align: left;
+}
+@media (min-width: 760px) {
+  .gen { grid-template-columns: 220px minmax(0, 1fr); }
+  .gen-suggest { grid-column: 1 / -1; }
+}
+.gen .muted { color: var(--muted); }
+
+.gen-btn {
+  min-height: 40px;
+  min-width: 40px;
+  padding: 0 0.9rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--fg);
+  font: inherit;
+  cursor: pointer;
+}
+.gen-btn:hover { background: var(--surface-hover); border-color: var(--accent); }
+.gen-btn:focus-visible,
+.gen-suggest-item:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.gen-btn-primary { background: var(--accent); border-color: var(--accent); color: var(--bg); font-weight: 600; }
+.gen-btn-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+.gen-btn-ghost { background: transparent; }
+
+.gen-preview { display: grid; gap: 1rem; align-content: start; justify-items: center; }
+.gen-canvas {
+  width: 100%;
+  max-width: 220px;
+  aspect-ratio: 1;
+  border: 2px solid var(--line);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--surface);
+}
+.gen-canvas img, .gen-suggest-item img { display: block; width: 100%; height: 100%; image-rendering: pixelated; }
+
+.gen-traits {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  justify-content: center;
+}
+.gen-traits li {
+  display: grid;
+  padding: 0.3rem 0.6rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--bg);
+  font-size: 0.75rem;
+  line-height: 1.3;
+  text-align: center;
+}
+.gen-traits strong { color: var(--accent); font-size: 0.85rem; }
+
+.gen-controls { display: grid; gap: 0.5rem; align-content: start; min-width: 0; }
+.gen-row {
+  display: grid;
+  grid-template-columns: 5.5rem 44px minmax(0, 1fr) 44px 44px;
+  align-items: center;
+  gap: 0.4rem;
+}
+.gen-row-label { font-weight: 600; }
+@media (max-width: 479px) {
+  .gen { padding: 1rem; }
+  .gen-row { grid-template-columns: 4.5rem 44px minmax(0, 1fr) 44px 44px; gap: 0.3rem; }
+  .gen-row-value small { display: none; }
+}
+.gen-row-value { text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gen-arrow, .gen-lock { padding: 0; font-size: 1.25rem; }
+.gen-lock[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-glow); }
+.gen-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.75rem; }
+.gen-hint { font-size: 0.8rem; margin: 0; }
+
+.gen-suggest-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.gen-suggest-head h3 { margin: 0; font-size: 1rem; }
+.gen-suggest-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+@media (min-width: 760px) {
+  .gen-suggest-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+}
+.gen-suggest-item {
+  padding: 0;
+  aspect-ratio: 1;
+  border: 2px solid var(--line);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--surface);
+  cursor: pointer;
+}
+.gen-suggest-item:hover { border-color: var(--accent-hover); }
+.gen-suggest-item[aria-pressed="true"] { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+.gen > legend { float: left; width: 100%; font-weight: 600; margin: 0 0 0.25rem; padding: 0; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .gen-suggest-item, .gen-btn { transition: border-color 0.15s, background 0.15s; }
+}
+
+/* Pasos del alta de perfil */
+.kv-stepper { display: flex; gap: 0.5rem; margin: 0 0 1rem; padding: 0; list-style: none; }
+.kv-step {
+  flex: 1;
+  padding: 0.4rem 0.5rem;
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--muted);
+  border-bottom: 3px solid var(--line);
+}
+.kv-step[data-state="active"] { color: var(--fg); border-bottom-color: var(--accent); font-weight: 600; }
+.kv-step[data-state="done"] { color: var(--accent); border-bottom-color: var(--accent); }
+.kv-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1rem; }
+.kv-actions > * { flex: 1; min-height: 40px; }
+.kv-error { color: var(--danger, #ef4444); }

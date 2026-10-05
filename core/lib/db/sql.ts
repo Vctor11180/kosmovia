@@ -17,7 +17,7 @@ export interface Query {
 
 const PROFILE_COLUMNS =
   "p.id, p.wallet, p.username, p.display_name, p.avatar_seed, p.avatar_style, p.bio, p.trust_level, p.x_handle, p.x_verified_at, p.created_at, p.username_changed_at, p.avatar_changed_at";
-const COMMUNITY_COLUMNS = "c.id, c.slug, c.name, c.icon, c.description, c.owner_id, c.created_at";
+const COMMUNITY_COLUMNS = "c.id, c.slug, c.name, c.icon, c.description, c.owner_id, c.created_at, c.image";
 const CHANNEL_COLUMNS = "ch.id, ch.community_id, ch.name, ch.topic, ch.type";
 
 /** ISO-8601 with microseconds, so ordering by the string equals ordering by the column. */
@@ -152,14 +152,24 @@ export interface NewCommunity {
   description: string;
   icon: string;
   ownerId: string;
+  /** data URL ya validada (lib/community-image.ts), o null. */
+  image: string | null;
 }
 
 /** The AFTER INSERT trigger adds the owner as a member and creates #general and #anuncios. */
 export const insertCommunity = (c: NewCommunity): Query => ({
   text:
-    "insert into public.communities (name, slug, description, icon, owner_id) values ($1, $2, $3, $4, $5) " +
-    "returning id, slug, name, icon, description, owner_id, created_at",
-  values: [c.name, c.slug, c.description, c.icon, c.ownerId],
+    "insert into public.communities (name, slug, description, icon, owner_id, image) values ($1, $2, $3, $4, $5, $6) " +
+    "returning id, slug, name, icon, description, owner_id, created_at, image",
+  values: [c.name, c.slug, c.description, c.icon, c.ownerId, c.image],
+});
+
+/** Solo el dueño: la condición owner_id = sesión va en el WHERE. Cero filas = no es el dueño (o no existe). */
+export const updateCommunityImage = (slug: string, ownerId: string, image: string | null): Query => ({
+  text:
+    "update public.communities set image = $3 where slug = $1 and owner_id = $2 " +
+    "returning id, slug, name, icon, description, owner_id, created_at, image",
+  values: [slug, ownerId, image],
 });
 
 /** Always as 'member'; joining twice is not an error. */

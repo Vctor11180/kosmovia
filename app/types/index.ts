@@ -27,6 +27,8 @@ export interface Community {
   name: string;
   slug: string;
   icon: string;
+  /** Foto de la comunidad (data URL chica), si tiene. */
+  image?: string;
   description: string;
   channels: Channel[];
   members: User[];

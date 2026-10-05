@@ -10,6 +10,8 @@ interface NotificationsBellProps {
   unread: number;
   /** Se llama al abrir: marca todo como visto. */
   onOpen: () => void;
+  /** 'right': en la barra izquierda, la lista se abre hacia la derecha y hacia arriba. */
+  placement?: 'down' | 'right';
 }
 
 /**
@@ -17,7 +19,7 @@ interface NotificationsBellProps {
  * recibidos) y al abrirla se ve la lista, con los mismos estilos de la
  * actividad de Mi Wallet.
  */
-export function NotificationsBell({ transactions, unread, onOpen }: NotificationsBellProps) {
+export function NotificationsBell({ transactions, unread, onOpen, placement = 'down' }: NotificationsBellProps) {
   const [open, setOpen] = useState(false);
   const boxRef = useRef<HTMLDivElement>(null);
 
@@ -46,7 +48,7 @@ export function NotificationsBell({ transactions, unread, onOpen }: Notification
     <div ref={boxRef} style={{ position: 'relative' }}>
       <button
         type="button"
-        className={`header-icon-btn ${open ? 'active' : ''}`}
+        className={`${placement === 'right' ? 'kv-rail-btn' : 'header-icon-btn'} ${open ? 'active' : ''}`}
         onClick={toggle}
         aria-label={unread > 0 ? `Notificaciones: ${unread} nuevas` : 'Notificaciones'}
         aria-expanded={open}
@@ -68,8 +70,7 @@ export function NotificationsBell({ transactions, unread, onOpen }: Notification
           className="wallet-drawer"
           style={{
             position: 'absolute',
-            top: 40,
-            right: 0,
+            ...(placement === 'right' ? { left: 'calc(100% + 12px)', bottom: 0 } : { top: 40, right: 0 }),
             width: 'min(340px, 86vw)',
             height: 'auto',
             maxHeight: '60vh',

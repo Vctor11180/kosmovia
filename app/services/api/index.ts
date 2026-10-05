@@ -45,7 +45,7 @@ type ProfileRow = {
   created_at?: string | null;
 };
 type AuthorRow = Pick<ProfileRow, 'id' | 'username' | 'display_name' | 'avatar_seed' | 'avatar_style'>;
-type CommunityRow = { id: string; slug: string; name: string; icon: string | null; description: string | null };
+type CommunityRow = { id: string; slug: string; name: string; icon: string | null; description: string | null; image?: string | null };
 type ChannelRow = { id: string; community_id: string; name: string; topic: string | null; type: string };
 type MemberRow = { role: string; profile: ProfileRow };
 type MessageWire = { id: string; channel_id: string; content: string; created_at: string; author: AuthorRow };
@@ -184,6 +184,7 @@ export class ApiCommunityService implements ICommunityService {
       name: c.name,
       slug: c.slug,
       icon: c.icon || c.name.trim().charAt(0).toUpperCase() || '🚀',
+      image: c.image ?? undefined,
       description: c.description ?? '',
       channels: channels.map(toChannel),
       members: members.map((m) => toUser(m.profile, { role: m.role })),
@@ -221,7 +222,21 @@ export class ApiCommunityService implements ICommunityService {
   async createCommunity(input: CreateCommunityInput): Promise<Community> {
     const { community } = await call<{ community: CommunityRow }>('/api/communities', {
       method: 'POST',
-      body: { name: input.name, slug: input.slug, description: input.description, icon: input.icon },
+      body: { name: input.name, slug: input.slug, description: input.description, icon: input.icon, image: input.image ?? null },
+    });
+    return this.detail(community);
+  }
+
+  async joinBySlug(slug: string): Promise<void> {
+    await call(`/api/communities/${encodeURIComponent(slug)}/join`, { method: 'POST' });
+  }
+
+  async updateImage(communityId: string, image: string | null): Promise<Community> {
+    const slug = this.slugs.get(communityId);
+    if (!slug) throw new ApiError('Comunidad desconocida.');
+    const { community } = await call<{ community: CommunityRow }>(`/api/communities/${encodeURIComponent(slug)}`, {
+      method: 'PATCH',
+      body: { image },
     });
     return this.detail(community);
   }

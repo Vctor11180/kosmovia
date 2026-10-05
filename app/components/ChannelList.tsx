@@ -3,6 +3,7 @@
 import React from 'react';
 import { Community, User } from '../types';
 import { AvatarFace } from './AvatarFace';
+import { CommunityMenu } from './CommunityMenu';
 
 interface ChannelListProps {
   community: Community;
@@ -11,6 +12,10 @@ interface ChannelListProps {
   currentUser: User;
   onOpenProfile?: () => void;
   onOpenCreateChannel?: () => void;
+  /** Dueño o admin de la comunidad activa. */
+  isOwner?: boolean;
+  onOpenSettings?: () => void;
+  onNotice?: (text: string) => void;
 }
 
 export function ChannelList({
@@ -20,17 +25,26 @@ export function ChannelList({
   currentUser,
   onOpenProfile,
   onOpenCreateChannel,
+  isOwner = false,
+  onOpenSettings,
+  onNotice,
 }: ChannelListProps) {
   return (
     <aside className="channel-sidebar" aria-label="Canales">
       <div className="community-header">
-        <h2 className="community-title">{community.name}</h2>
+        <CommunityMenu
+          name={community.name}
+          slug={community.slug}
+          isOwner={isOwner}
+          onOpenSettings={() => onOpenSettings?.()}
+          onNotice={(text) => onNotice?.(text)}
+        />
       </div>
 
       <div className="channel-list-scroll">
         <div className="channel-category-row">
           <span className="channel-category-label">Canales de Texto</span>
-          {onOpenCreateChannel && (
+          {onOpenCreateChannel && isOwner && (
             <button
               type="button"
               className="btn-add-channel"
