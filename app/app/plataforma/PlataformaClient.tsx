@@ -118,10 +118,17 @@ export function PlataformaPage() {
 
   const seenKey = `kosmovia:pagos-vistos:${publicKey}`;
   useEffect(() => {
+    // Primera vez en este navegador: se cuenta desde ahora (el historial viejo no es "nuevo").
     try {
-      setLastSeenPayments(Number(localStorage.getItem(seenKey)) || 0);
+      const stored = Number(localStorage.getItem(seenKey));
+      if (stored) setLastSeenPayments(stored);
+      else {
+        const now = Date.now();
+        localStorage.setItem(seenKey, String(now));
+        setLastSeenPayments(now);
+      }
     } catch {
-      setLastSeenPayments(0);
+      setLastSeenPayments(Date.now());
     }
   }, [seenKey]);
 
