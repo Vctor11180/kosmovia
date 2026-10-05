@@ -46,10 +46,9 @@ export function CommunityBar({
         aria-label="Kosmovia: inicio"
         onClick={() => communities[0] && onSelectCommunity(communities[0].id)}
       >
-        <svg viewBox="0 0 64 64" width="30" height="30" aria-hidden="true">
-          <circle cx="32" cy="32" r="18" fill="none" stroke="currentColor" strokeWidth="5" />
-          <circle cx="32" cy="32" r="5" fill="currentColor" />
-        </svg>
+        {/* Logo provisorio (segunda ronda, variación 2). */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/brand/kosmovia-logo.png" alt="" width={48} height={48} className="kv-brand-img" />
       </button>
 
       <button type="button" className="kv-rail-btn" disabled title="Mensajes directos · próximamente" aria-label="Mensajes directos (próximamente)">
