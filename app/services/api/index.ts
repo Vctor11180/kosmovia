@@ -25,7 +25,7 @@ import {
   newPaymentRef,
   paymentOptions,
   pollarAsset,
-  rejectionMessage,
+  rejectionText,
   rejectionReason,
 } from '../../lib/core/payments.ts';
 import { forgetPayment, rememberPayment } from '../../lib/core/payment-memory.ts';
@@ -377,7 +377,7 @@ export class ApiWalletService implements IWalletService {
       forgetPayment(me);
       const reason = rejectionReason(outcome);
       const why = outcome?.status === 'error' ? outcome.details ?? outcome.message ?? '' : '';
-      throw new ApiError(reason ? rejectionMessage(reason) : `No se pudo enviar y no se movió dinero.${why ? ` Pollar dijo: ${why.slice(0, 160)}` : ''}`);
+      throw new ApiError(reason ? rejectionText(reason, outcome) : `No se pudo enviar y no se movió dinero.${why ? ` Pollar dijo: ${why.slice(0, 160)}` : ''}`);
     }
     if (outcome?.status === 'error' && !outcome.hash) {
       console.warn('[pagos] Pollar no devolvió hash:', [outcome.code, outcome.details ?? outcome.message].filter(Boolean).join(' · '));
