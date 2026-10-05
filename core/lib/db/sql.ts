@@ -44,6 +44,12 @@ export const profileByUsername = (username: string): Query => ({
   values: [username],
 });
 
+/** The profile that owns a Stellar address (wallet is unique). */
+export const profileByWallet = (wallet: string): Query => ({
+  text: `select ${PROFILE_COLUMNS} from public.profiles p where p.wallet = $1`,
+  values: [wallet],
+});
+
 /** Which of these usernames (already lowercase) are taken. */
 export const takenUsernames = (names: string[]): Query => ({
   text: "select lower(p.username) as username from public.profiles p where lower(p.username) = any($1::text[])",

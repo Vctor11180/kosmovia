@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
+import { usePollar } from "@pollar/react";
 import { PollarGate } from "../lib/pollar.tsx";
 import { usePollarAuth } from "../hooks/usePollarAuth.ts";
 import { useAccountSetup } from "../hooks/useAccountSetup.tsx";
@@ -11,10 +12,14 @@ import { fromHandle } from "../lib/mappers.ts";
 import { SendPayment } from "./SendPayment";
 import { ReceivePayment } from "./ReceivePayment";
 import { PaymentHistory } from "./PaymentHistory";
+import { WelcomeGift } from "./WelcomeGift";
+import { isApiBackend } from "../lib/backend.ts";
 import "./pagos.css";
 import {
   FRIENDBOT_URL,
+  USDC_CODE,
   USDC_FAUCET_URL,
+  USDC_ISSUER_TESTNET,
   explorerAccountUrl,
 } from "../lib/pollar-config.ts";
 import {
@@ -154,7 +159,7 @@ function WalletInner() {
             <dt className="muted">USDC</dt>
             <dd style={{ margin: 0 }}>
               {load.balances.usdc === null ? (
-                <span className="muted">sin habilitar todavía</span>
+                <EnableUsdc onDone={() => void refresh()} />
               ) : (
                 formatAmount(load.balances.usdc)
               )}
@@ -169,12 +174,17 @@ function WalletInner() {
         )}
       </div>
 
-      <SendPayment
-        address={address}
-        balances={load.step === "ready" ? load.balances : null}
-        record={pay.record}
-        onSent={() => void refresh()}
-      />
+      <WelcomeGift onClaimed={() => void refresh()} />
+      {isApiBackend() ? (
+        <SendPayment
+          address={address}
+          balances={load.step === "ready" ? load.balances : null}
+          record={pay.record}
+          onSent={() => void refresh()}
+        />
+      ) : (
+        <p className="card muted">Los pagos necesitan el servidor de Kosmovia (modo api).</p>
+      )}
       <ReceivePayment username={profile ? fromHandle(profile.username) : null} />
       {pay.enabled ? <PaymentHistory address={address} payments={pay.payments} loading={pay.loading} error={pay.error} /> : null}
 
@@ -201,5 +211,46 @@ function WalletInner() {
         </p>
       </div>
     </div>
+  );
+}
+
+/**
+ * USDC not enabled yet (no trustline): the account setup only adds the assets
+ * enabled in the Pollar dashboard, so a wallet can end up without it. This
+ * adds the testnet USDC trustline on demand. With Freighter the user signs;
+ * the reserve and fee come from the account's (test) XLM unless Pollar sponsors it.
+ */
+function EnableUsdc({ onDone }: { onDone: () => void }) {
+  const { setTrustline } = usePollar();
+  const [state, setState] = useState<{ busy: boolean; error: string | null }>({ busy: false, error: null });
+
+  async function enable() {
+    setState({ busy: true, error: null });
+    try {
+      const out = await setTrustline({ code: USDC_CODE, issuer: USDC_ISSUER_TESTNET });
+      if (out.status === "error") {
+        setState({ busy: false, error: out.details ?? "No se pudo habilitar USDC. Intenta de nuevo." });
+        return;
+      }
+      setState({ busy: false, error: null });
+      // Horizon can take a moment to show the new trustline.
+      setTimeout(onDone, 2_500);
+    } catch (err) {
+      setState({ busy: false, error: err instanceof Error ? err.message : "No se pudo habilitar USDC." });
+    }
+  }
+
+  return (
+    <span style={{ display: "inline-grid", gap: "0.35rem" }}>
+      <span className="muted">sin habilitar todavía</span>
+      <button type="button" className="btn" onClick={() => void enable()} disabled={state.busy}>
+        {state.busy ? "Habilitando… (confirma en Freighter si te lo pide)" : "Habilitar USDC"}
+      </button>
+      {state.error ? (
+        <span className="error" role="alert">
+          {state.error}
+        </span>
+      ) : null}
+    </span>
   );
 }

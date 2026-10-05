@@ -60,3 +60,23 @@
 .pay-row-meta { font-size: 0.8rem; }
 .pay-row-amount { font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .pay-row-amount[data-dir="in"] { color: var(--accent); }
+
+/* Montos rápidos: las pruebas y la demo usan 0,02 USDC por pago */
+.pay-quick { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.pay-quick-btn {
+  min-height: 40px;
+  padding: 0.25rem 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--bg);
+  color: var(--fg);
+  font: inherit;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+.pay-quick-btn:hover { border-color: var(--accent); }
+.pay-quick-btn[data-active="true"] { border-color: var(--accent); color: var(--accent); }
+.pay-quick-btn:focus-visible { outline: 2px solid var(--glow); outline-offset: 2px; }
+
+/* Regalo de bienvenida */
+.pay-gift { border-color: var(--accent-strong); background: linear-gradient(135deg, rgba(45, 212, 191, 0.12), transparent 60%), var(--surface); }

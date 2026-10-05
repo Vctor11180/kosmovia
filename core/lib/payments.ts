@@ -11,6 +11,9 @@ import { HORIZON_URL, USDC_CODE, USDC_ISSUER_TESTNET } from "./pollar-config.ts"
 export type PaymentAsset = "XLM" | "USDC";
 export const PAYMENT_ASSETS: readonly PaymentAsset[] = ["USDC", "XLM"];
 
+/** Smallest payment: 0.01 of either asset (sub-cent sends are noise, and 0.01 USDC is the demo amount). */
+export const MIN_PAYMENT = "0.01";
+
 /** Per-payment cap while we are on testnet: big enough to demo, small enough to catch typos. */
 export const MAX_PAYMENT: Record<PaymentAsset, string> = { XLM: "10000", USDC: "10000" };
 
@@ -53,6 +56,7 @@ export function checkAmount(input: string, asset: PaymentAsset, balance?: string
   const stroops = toStroops(raw);
   if (stroops === null) return { ok: false, error: "Usa solo números, con hasta 7 decimales." };
   if (stroops <= ZERO) return { ok: false, error: "El monto tiene que ser mayor que 0." };
+  if (stroops < (toStroops(MIN_PAYMENT) as bigint)) return { ok: false, error: `El mínimo por envío es 0,01 ${asset}.` };
   const max = toStroops(MAX_PAYMENT[asset]) as bigint;
   if (stroops > max) return { ok: false, error: `En la red de prueba el máximo por envío es ${MAX_PAYMENT[asset]} ${asset}.` };
   if (balance != null) {
@@ -193,19 +197,212 @@ export function explorerTxUrl(hash: string): string {
   return `https://stellar.expert/explorer/testnet/tx/${hash}`;
 }
 
-// ------------------------------------------------------------ send errors
+// ------------------------------------------- sending without paying twice
+//
+// Ported from Pollar Pass (pollar-apps/apps/event-tickets), where it was
+// tested with real payments and two adversarial reviews. Every send carries a
+// unique memo and a bounded lifetime, and the browser remembers it BEFORE the
+// SDK is called. An error with no hash is "unknown", never "not sent": the
+// app then looks the payment up by its memo and only lets the person send
+// again once the network could no longer accept that transaction.
+
+/** The transaction's lifetime (`timeoutSec`): signed after this, Stellar refuses it. */
+export const SEND_TIMEOUT_SEC = 5 * 60;
+/** Clock drift and a ledger closing just after the bound. */
+export const ATTEMPT_SLACK_MS = 2 * 60 * 1000;
+
+/** "kv-" + 16 base32 characters: unique per send, public on-chain, carries nothing personal. */
+export const MEMO_RE = /^kv-[a-z2-7]{16}$/;
+const BASE32 = "abcdefghijklmnopqrstuvwxyz234567";
+
+export function newPaymentRef(random: (bytes: Uint8Array) => Uint8Array = (b) => crypto.getRandomValues(b)): string {
+  const bytes = random(new Uint8Array(16));
+  return `kv-${Array.from(bytes, (b) => BASE32[b & 31]).join("")}`;
+}
+
+/** The options of `sendPayment`: the memo that finds this payment again and its lifetime. */
+export function paymentOptions(memo: string, timeoutSec = SEND_TIMEOUT_SEC) {
+  return { memo: { type: "text" as const, value: memo }, timeoutSec };
+}
+
+/** After this instant the attempt started at `startedAtMs` can no longer land. */
+export function attemptDeadlineMs(startedAtMs: number): number {
+  return startedAtMs + SEND_TIMEOUT_SEC * 1000 + ATTEMPT_SLACK_MS;
+}
+
+type OutcomeLike = { status?: string; hash?: string; code?: string; details?: string; message?: string };
+
+/** Why a send provably never left. */
+export type RejectionReason = "noWallet" | "notReady" | "declined" | "balance" | "fee" | "destination" | "other";
 
 /**
- * Pollar's error outcome -> a sentence the user understands. Stellar result
- * codes first (they are the most precise), then the wallet's own messages.
+ * Backend codes that refuse a request before anything is submitted. An
+ * allowlist on purpose: TX_BAD_SEQUENCE and TX_CONTRACT_FAILED can follow a
+ * submission, so they stay "unknown".
  */
-export function sendErrorMessage(outcome: { resultCode?: string; code?: string; details?: string; message?: string }): string {
-  const text = [outcome.resultCode, outcome.code, outcome.details, outcome.message].filter(Boolean).join(" ");
-  if (/op_underfunded|insufficient|underfunded/i.test(text)) return "No tienes saldo suficiente para este envío.";
-  if (/op_no_trust|no_trust|trustline/i.test(text)) return "Esa persona todavía no puede recibir ese activo.";
-  if (/op_no_destination|no_destination/i.test(text)) return "Esa wallet todavía no está activa en la red de prueba.";
-  if (/op_line_full/i.test(text)) return "Esa persona ya no puede recibir más de ese activo.";
-  if (/tx_bad_seq/i.test(text)) return "La red estaba ocupada. Intenta de nuevo.";
-  if (/reject|denied|declined|cancel/i.test(text)) return "Cancelaste la firma: no se envió nada.";
-  return "No se pudo enviar el pago. No se movió dinero; intenta de nuevo.";
+const REJECTED_CODES: Record<string, RejectionReason> = {
+  TX_INSUFFICIENT_BALANCE: "balance",
+  TX_INSUFFICIENT_FEE: "fee",
+  TX_FEE_LIMIT_EXCEEDED: "fee",
+  TX_DESTINATION_NOT_FOUND: "destination",
+  TX_NO_TRUSTLINE: "destination",
+  // 409 of /tx/build-sign-submit: Pollar never finished provisioning the custodial
+  // wallet, so it refuses to build or sign anything (it retries on the next sign-in).
+  SDK_WALLET_NOT_READY: "notReady",
+};
+
+/** Messages the SDK raises on the client before sending, compared whole. */
+const SDK_BEFORE_SUBMIT = new Set(
+  [
+    "No wallet connected",
+    "Wallet not connected. Reconnect your wallet to sign.",
+    "missing unsigned transaction",
+    "build returned no unsigned transaction",
+    "no prepared smart transaction; call buildTx first",
+  ].map((m) => m.toLowerCase()),
+);
+
+/** A person declining in Freighter or another wallet, as the adapter words it. */
+const WALLET_DECLINED = /^(the )?user (declined|rejected|denied|refused|cancell?ed|closed)\b[^.\n]{0,60}\.?$/i;
+
+export function rejectionReason(outcome: OutcomeLike | null | undefined): RejectionReason | null {
+  if (!outcome || outcome.hash || outcome.status !== "error") return null;
+  if (outcome.code && Object.prototype.hasOwnProperty.call(REJECTED_CODES, outcome.code)) return REJECTED_CODES[outcome.code];
+  const details = (outcome.details ?? "").trim();
+  if (details) {
+    const lower = details.toLowerCase();
+    if (SDK_BEFORE_SUBMIT.has(lower)) return lower.includes("wallet") ? "noWallet" : "other";
+    if (WALLET_DECLINED.test(details)) return "declined";
+  }
+  return null;
+}
+
+/**
+ * - `sent`: it has a hash, the network saw it (Horizon says whether it succeeded).
+ * - `rejected`: it provably never left.
+ * - `unknown`: anything else. It may have gone through: look for it, never resend.
+ */
+export function classifySubmit(outcome: OutcomeLike | null | undefined): "sent" | "rejected" | "unknown" {
+  if (!outcome) return "unknown";
+  if (outcome.hash) return "sent";
+  if (outcome.status !== "error") return "unknown";
+  return rejectionReason(outcome) === null ? "unknown" : "rejected";
+}
+
+/**
+ * The SDK's own record of where a send failed (`getTransactionState()`), read
+ * right after the call. With an external wallet (Freighter) the transaction is
+ * built, then signed, then submitted: an error in `building` or `signing` was
+ * never submitted. Compound phases (`signing-submitting`, the custodial
+ * `building-signing-submitting`) and `submitting` stay unknown.
+ */
+export function failedBeforeSubmit(state: { step?: string; phase?: string } | null | undefined): boolean {
+  return state?.step === "error" && (state.phase === "building" || state.phase === "signing");
+}
+
+/** {@link classifySubmit} plus the SDK's phase: a failure proven to come before submission is a rejection. */
+export function classifyWithPhase(
+  outcome: OutcomeLike | null | undefined,
+  state: { step?: string; phase?: string } | null | undefined,
+): "sent" | "rejected" | "unknown" {
+  const verdict = classifySubmit(outcome);
+  if (verdict === "unknown" && outcome?.status === "error" && !outcome.hash && failedBeforeSubmit(state)) return "rejected";
+  return verdict;
+}
+
+export function rejectionMessage(reason: RejectionReason): string {
+  switch (reason) {
+    case "noWallet":
+      return "Tu wallet no está conectada. Vuelve a entrar e intenta de nuevo. No se envió nada.";
+    case "notReady":
+      return "Pollar todavía no terminó de crear tu wallet, así que no se envió nada. Sal y vuelve a entrar para que lo reintente; si sigue igual, prueba entrando con Freighter.";
+    case "declined":
+      return "Cancelaste la firma: no se envió nada.";
+    case "balance":
+      return "No tienes saldo suficiente. Recuerda que cada envío también usa un poco de XLM para la comisión.";
+    case "fee":
+      return "La comisión de la red está alta ahora. No se envió nada; intenta en un momento.";
+    case "destination":
+      return "Esa wallet todavía no puede recibir este activo. No se envió nada.";
+    default:
+      return "No se pudo enviar. No se movió dinero; intenta de nuevo.";
+  }
+}
+
+// ------------------------------------------------ finding a payment by memo
+
+export interface HorizonPaymentRecord {
+  type: string;
+  from?: string;
+  to?: string;
+  transaction_hash?: string;
+  created_at?: string;
+  transaction?: { memo_type?: string; memo?: string };
+}
+
+/**
+ * Hashes of `wallet`'s own payments carrying `memo`, newest first, once each.
+ * Only payments FROM the wallet count: the memo is public, so anyone could
+ * send the wallet a payment with it; those are skipped, not believed.
+ */
+export function memoCandidates(records: HorizonPaymentRecord[], wallet: string, memo: string): string[] {
+  const hashes: string[] = [];
+  for (const r of records) {
+    if (
+      r.type === "payment" &&
+      r.from === wallet &&
+      r.transaction?.memo_type === "text" &&
+      (r.transaction.memo ?? "").trim() === memo &&
+      r.transaction_hash &&
+      TX_HASH_RE.test(r.transaction_hash) &&
+      !hashes.includes(r.transaction_hash)
+    ) {
+      hashes.push(r.transaction_hash);
+    }
+  }
+  return hashes;
+}
+
+/**
+ * May an empty search be believed? Only if Horizon's ingested history closed
+ * after the attempt's deadline: then every ledger that could hold it was searched.
+ */
+export function historyReaches(historyClosedAtMs: number | null, pastMs: number): boolean {
+  return historyClosedAtMs !== null && Number.isFinite(historyClosedAtMs) && historyClosedAtMs > pastMs;
+}
+
+/** The wallet's latest 200 payments with their transactions (memo included). */
+export async function fetchAccountPayments(
+  wallet: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<{ ok: true; records: HorizonPaymentRecord[] } | { ok: false }> {
+  try {
+    const res = await fetchImpl(
+      `${HORIZON_URL}/accounts/${encodeURIComponent(wallet)}/payments?order=desc&limit=200&join=transactions`,
+      { headers: { Accept: "application/json" }, cache: "no-store", signal: AbortSignal.timeout(10_000) },
+    );
+    if (res.status === 404) return { ok: true, records: [] };
+    if (!res.ok) return { ok: false };
+    const body = (await res.json()) as { _embedded?: { records?: HorizonPaymentRecord[] } };
+    return { ok: true, records: body._embedded?.records ?? [] };
+  } catch {
+    return { ok: false };
+  }
+}
+
+/** When the newest ledger Horizon has ingested closed (ms), or null. Read BEFORE searching. */
+export async function fetchHistoryClosedAt(fetchImpl: typeof fetch = fetch): Promise<number | null> {
+  try {
+    const res = await fetchImpl(`${HORIZON_URL}/`, {
+      headers: { Accept: "application/json" },
+      cache: "no-store",
+      signal: AbortSignal.timeout(8_000),
+    });
+    if (!res.ok) return null;
+    const body = (await res.json()) as { history_latest_ledger_closed_at?: unknown };
+    const ms = typeof body.history_latest_ledger_closed_at === "string" ? Date.parse(body.history_latest_ledger_closed_at) : NaN;
+    return Number.isFinite(ms) ? ms : null;
+  } catch {
+    return null;
+  }
 }

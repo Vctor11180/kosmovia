@@ -2,7 +2,28 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 // @ts-ignore: Node necesita la extensión .ts al importar; Next la resuelve sin ella.
-import { checkAmount, cleanNote, fromStroops, pickPayment, sendErrorMessage, toStroops, trimAmount, PAYMENT_MAX_AGE_MS } from "../lib/payments.ts";
+import {
+  MEMO_RE,
+  PAYMENT_MAX_AGE_MS,
+  SEND_TIMEOUT_SEC,
+  attemptDeadlineMs,
+  checkAmount,
+  classifySubmit,
+  classifyWithPhase,
+  cleanNote,
+  fromStroops,
+  historyReaches,
+  memoCandidates,
+  newPaymentRef,
+  paymentOptions,
+  pickPayment,
+  rejectionMessage,
+  rejectionReason,
+  toStroops,
+  trimAmount,
+} from "../lib/payments.ts";
+// @ts-ignore
+import { claimFailure, pickWelcomeRule } from "../lib/welcome.ts";
 // @ts-ignore
 import * as q from "../lib/db/sql.ts";
 // @ts-ignore
@@ -43,6 +64,9 @@ test("checkAmount: coma decimal, mayor que 0, tope y saldo", () => {
   assert.deepEqual(checkAmount("2,5", "USDC"), { ok: true, amount: "2.5000000" });
   assert.equal(checkAmount("", "USDC").ok, false);
   assert.equal(checkAmount("0", "USDC").ok, false);
+  assert.equal(checkAmount("0,009", "USDC").ok, false, "el mínimo es 0,01");
+  assert.match((checkAmount("0.001", "XLM") as { error: string }).error, /mínimo por envío es 0,01 XLM/);
+  assert.deepEqual(checkAmount("0,01", "USDC"), { ok: true, amount: "0.0100000" });
   assert.equal(checkAmount("abc", "XLM").ok, false);
   assert.equal(checkAmount("10000.0000001", "XLM").ok, false);
   assert.equal(checkAmount("10000", "XLM").ok, true);
@@ -94,12 +118,79 @@ test("pickPayment rechaza lo que no se puede reclamar", () => {
   assert.equal(code([op({ id: "1; drop table" })]), "bad_payment");
 });
 
-test("los errores de envío salen en palabras simples", () => {
-  assert.match(sendErrorMessage({ resultCode: "op_underfunded" }), /saldo suficiente/);
-  assert.match(sendErrorMessage({ resultCode: "op_no_trust" }), /no puede recibir/);
-  assert.match(sendErrorMessage({ resultCode: "op_no_destination" }), /no está activa/);
-  assert.match(sendErrorMessage({ message: "User declined access" }), /Cancelaste/);
-  assert.match(sendErrorMessage({}), /No se movió dinero/);
+test("un error sin hash es 'desconocido': nunca se trata como 'no se envió'", () => {
+  assert.equal(classifySubmit({ status: "success", hash: HASH }), "sent");
+  assert.equal(classifySubmit({ status: "error", hash: HASH, code: "TX_FAILED" }), "sent");
+  assert.equal(classifySubmit(undefined), "unknown");
+  assert.equal(classifySubmit({ status: "error" }), "unknown");
+  assert.equal(classifySubmit({ status: "error", code: "TX_BAD_SEQUENCE" }), "unknown");
+  assert.equal(classifySubmit({ status: "error", details: "Request timed out" }), "unknown");
+  assert.equal(classifySubmit({ status: "pending" }), "unknown");
+  assert.equal(classifySubmit({ status: "error", code: "TX_INSUFFICIENT_BALANCE" }), "rejected");
+  assert.equal(rejectionReason({ status: "error", code: "TX_NO_TRUSTLINE" }), "destination");
+  // La wallet de Pollar no terminó de crearse: nada se armó ni se firmó.
+  assert.equal(classifySubmit({ status: "error", code: "SDK_WALLET_NOT_READY" }), "rejected");
+  assert.match(rejectionMessage("notReady"), /Sal y vuelve a entrar/);
+  assert.equal(rejectionReason({ status: "error", details: "User declined access" }), "declined");
+  assert.equal(rejectionReason({ status: "error", details: "No wallet connected" }), "noWallet");
+  // Only the whole message counts, never a substring.
+  assert.equal(rejectionReason({ status: "error", details: "timeout after User declined access was shown" }), null);
+  assert.match(rejectionMessage("declined"), /no se envió nada/);
+  assert.match(rejectionMessage("balance"), /XLM para la comisión/);
+});
+
+test("cada envío lleva una referencia única y una vida acotada", () => {
+  const refs = new Set(Array.from({ length: 200 }, () => newPaymentRef()));
+  assert.equal(refs.size, 200);
+  for (const r of refs) assert.match(r, MEMO_RE);
+  assert.ok(newPaymentRef().length <= 28, "un memo de texto de Stellar tiene 28 bytes como máximo");
+  assert.deepEqual(paymentOptions("kv-abcdefghijklmnop"), { memo: { type: "text", value: "kv-abcdefghijklmnop" }, timeoutSec: SEND_TIMEOUT_SEC });
+  const start = Date.parse("2026-10-04T12:00:00Z");
+  assert.equal(attemptDeadlineMs(start), start + SEND_TIMEOUT_SEC * 1000 + 2 * 60 * 1000);
+});
+
+test("buscar por memo: solo pagos que salieron de tu wallet, una vez cada uno", () => {
+  const memo = "kv-abcdefghijklmnop";
+  const rec = (over: Record<string, unknown>) => ({
+    type: "payment", from: ME, to: YOU, transaction_hash: HASH, transaction: { memo_type: "text", memo }, ...over,
+  });
+  const other = "b".repeat(64);
+  assert.deepEqual(
+    memoCandidates(
+      [
+        rec({ from: YOU, to: ME, transaction_hash: other }), // alguien te manda un pago con tu memo: no se cree
+        rec({}),
+        rec({}), // la misma tx vista dos veces
+        rec({ transaction: { memo_type: "text", memo: "kv-otro" } }),
+        rec({ type: "create_account" }),
+        rec({ transaction_hash: "no-es-un-hash" }),
+      ] as never,
+      ME,
+      memo,
+    ),
+    [HASH],
+  );
+});
+
+test("una búsqueda vacía solo vale si la red ya pasó el plazo del intento", () => {
+  const deadline = Date.parse("2026-10-04T12:07:00Z");
+  assert.equal(historyReaches(null, deadline), false);
+  assert.equal(historyReaches(deadline, deadline), false);
+  assert.equal(historyReaches(deadline - 1, deadline), false);
+  assert.equal(historyReaches(deadline + 5_000, deadline), true);
+});
+
+test("el regalo de bienvenida ofrece USDC primero y entiende los errores", () => {
+  const rules = [
+    { id: "1", assetCode: "XLM", amount: "5", claimable: true },
+    { id: "2", assetCode: "USDC", amount: "1", claimable: false },
+    { id: "3", assetCode: "USDC", amount: "0.5", claimable: true },
+  ];
+  assert.equal(pickWelcomeRule(rules)?.id, "3");
+  assert.equal(pickWelcomeRule([rules[1]]), null);
+  assert.equal(claimFailure(new Error("DISTRIBUTION_RATE_LIMIT_EXCEEDED")), "claimed");
+  assert.equal(claimFailure(new Error("DISTRIBUTION_RULE_EXHAUSTED")), "gone");
+  assert.equal(claimFailure(new Error("network")), "retry");
 });
 
 test("las consultas de pagos van parametrizadas", () => {
@@ -116,6 +207,12 @@ test("las consultas de pagos van parametrizadas", () => {
   }
 });
 
+test("buscar un perfil por wallet va parametrizado", () => {
+  const query = q.profileByWallet("x'; drop table profiles; --");
+  assert.match(query.text, /where p\.wallet = \$1/);
+  assert.ok(!query.text.includes("drop table"));
+});
+
 test("0004_pagos.sql: un pago por operación y CHECKs de formato", () => {
   const sql = readFileSync(new URL("../db/migrations/0004_pagos.sql", import.meta.url), "utf8");
   assert.match(sql, /constraint payments_op_id_key unique \(op_id\)/);
@@ -123,4 +220,17 @@ test("0004_pagos.sql: un pago por operación y CHECKs de formato", () => {
   assert.match(sql, /asset in \('XLM', 'USDC'\)/);
   assert.match(sql, /amount > 0/);
   assert.match(sql, /char_length\(note\) between 1 and 140/);
+});
+
+test("un fallo al armar o firmar (antes de enviar) se muestra al instante", () => {
+  const err = { status: "error", details: "algo raro" };
+  assert.equal(classifyWithPhase(err, { step: "error", phase: "building" }), "rejected");
+  assert.equal(classifyWithPhase(err, { step: "error", phase: "signing" }), "rejected");
+  // Enviando o en una llamada atómica: puede haber salido.
+  assert.equal(classifyWithPhase(err, { step: "error", phase: "submitting" }), "unknown");
+  assert.equal(classifyWithPhase(err, { step: "error", phase: "signing-submitting" }), "unknown");
+  assert.equal(classifyWithPhase(err, { step: "error", phase: "building-signing-submitting" }), "unknown");
+  assert.equal(classifyWithPhase(err, null), "unknown");
+  // Con hash siempre es "sent", aunque el estado diga error.
+  assert.equal(classifyWithPhase({ status: "error", hash: HASH }, { step: "error", phase: "building" }), "sent");
 });
