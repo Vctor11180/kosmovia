@@ -1,11 +1,13 @@
 'use client';
 
-import React, { useSyncExternalStore } from 'react';
+import React, { useCallback, useEffect, useState, useSyncExternalStore } from 'react';
 import Link from 'next/link';
 import { PollarAppProvider, usePollarStatus } from '../lib/core/pollar.tsx';
 import { SessionBridge } from '../lib/core/SessionBridge.tsx';
 import { usePollarAuth } from '../lib/core/usePollarAuth.ts';
 import { tokenStore } from '../lib/core/token-store.ts';
+import { apiRequest } from '../lib/core/api-client.ts';
+import { CoreCreateProfile } from './CoreCreateProfile';
 import { SERVICES_MODE } from '../services';
 
 /**
@@ -51,7 +53,7 @@ function Gate({ children }: { children: React.ReactNode }) {
 
 function SessionGate({ children }: { children: React.ReactNode }) {
   const session = useCoreSession();
-  if (session.step === 'ready') return <>{children}</>;
+  if (session.step === 'ready') return <ProfileGate>{children}</ProfileGate>;
   if (session.step === 'logged-out') {
     return (
       <Notice text="Entra con tu wallet para ver la plataforma.">
@@ -63,6 +65,32 @@ function SessionGate({ children }: { children: React.ReactNode }) {
   }
   if (session.step === 'error') return <Notice text={session.message ?? 'No se pudo abrir la sesión.'} />;
   return <Notice text="Conectando con Kosmovia…" />;
+}
+
+/** Con sesión, pero sin perfil todavía: se crea aquí mismo. */
+function ProfileGate({ children }: { children: React.ReactNode }) {
+  const { user } = usePollarAuth();
+  const [state, setState] = useState<'checking' | 'missing' | 'ok' | 'error'>('checking');
+  const [message, setMessage] = useState('');
+
+  const check = useCallback(async () => {
+    setState('checking');
+    const res = await apiRequest<{ profile: unknown | null }>('/api/profile');
+    if (!res.ok) {
+      setMessage(res.error);
+      return setState('error');
+    }
+    setState(res.data.profile ? 'ok' : 'missing');
+  }, []);
+
+  useEffect(() => {
+    void check();
+  }, [check]);
+
+  if (state === 'ok') return <>{children}</>;
+  if (state === 'missing' && user) return <CoreCreateProfile address={user.address} onCreated={() => void check()} />;
+  if (state === 'error') return <Notice text={message || 'No se pudo cargar tu perfil.'} />;
+  return <Notice text="Cargando tu perfil…" />;
 }
 
 function Notice({ text, children }: { text: string; children?: React.ReactNode }) {

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { User } from '../types';
 import { AvatarFace } from './AvatarFace';
 
@@ -8,7 +8,8 @@ interface ProfileModalProps {
   user: User;
   isOpen: boolean;
   onClose: () => void;
-  onSave: (updated: { displayName: string; bio: string }) => void;
+  /** true si se guardó; false deja el modal abierto (el error lo muestra la página). */
+  onSave: (updated: { displayName: string; bio: string }) => Promise<boolean> | void;
   stellarAddress?: string;
 }
 
@@ -21,19 +22,38 @@ export function ProfileModal({
 }: ProfileModalProps) {
   const [activeTab, setActiveTab] = useState<'profile' | 'wallets' | 'kyc'>('profile');
   const [displayName, setDisplayName] = useState(user.displayName);
-  const [bio, setBio] = useState(user.bio || 'Frontend Lead & Builder en Kosmovia.');
+  const [bio, setBio] = useState(user.bio || '');
+  const [saving, setSaving] = useState(false);
 
-  // Estados de billeteras externas vinculadas
-  const [isFreighterConnected, setIsFreighterConnected] = useState(false);
-  const [isMetaMaskConnected, setIsMetaMaskConnected] = useState(false);
+  // Al abrir, partir de los datos actuales (el modal se monta antes de que lleguen los reales).
+  useEffect(() => {
+    if (!isOpen) return;
+    setDisplayName(user.displayName);
+    setBio(user.bio || '');
+  }, [isOpen, user.displayName, user.bio]);
+
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSave({ displayName, bio });
-    onClose();
+    if (saving) return;
+    setSaving(true);
+    const ok = await onSave({ displayName: displayName.trim(), bio: bio.trim() });
+    setSaving(false);
+    if (ok !== false) onClose();
   };
+
+  // Nivel real cuando viene de core; sin él (modo demo) se ve como antes.
+  const level = user.trustLevel;
+  const levelText =
+    level === undefined
+      ? 'Nivel 2: Verificado en Stellar Testnet'
+      : level === 2
+        ? 'Nivel 2: Empresa verificada'
+        : level === 1
+          ? 'Nivel 1: Cuenta social verificada (X)'
+          : 'Nivel 0: Wallet conectada';
 
   return (
     <div className="modal-backdrop" onClick={onClose} role="dialog" aria-modal="true">
@@ -90,9 +110,9 @@ export function ProfileModal({
                 className="form-input readonly"
                 value={user.username}
                 disabled
-                title="El usuario no se puede cambiar"
+                title="El @usuario se cambia desde tu perfil en core"
               />
-              <span className="form-hint">Tu identificador único e inmutable en la red.</span>
+              <span className="form-hint">Tu identificador único. Se puede cambiar 1 vez cada 24 h.</span>
             </div>
 
             <div className="form-group">
@@ -102,6 +122,7 @@ export function ProfileModal({
                 className="form-input"
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
+                maxLength={40}
                 required
               />
             </div>
@@ -113,6 +134,7 @@ export function ProfileModal({
                 rows={3}
                 value={bio}
                 onChange={(e) => setBio(e.target.value)}
+                maxLength={280}
                 placeholder="Contanos qué estás construyendo en Kosmovia..."
               />
             </div>
@@ -121,8 +143,8 @@ export function ProfileModal({
               <button type="button" className="btn-secondary" onClick={onClose}>
                 Cancelar
               </button>
-              <button type="submit" className="btn-primary">
-                Guardar cambios
+              <button type="submit" className="btn-primary" disabled={saving || !displayName.trim()}>
+                {saving ? 'Guardando…' : 'Guardar cambios'}
               </button>
             </div>
           </form>
@@ -142,7 +164,7 @@ export function ProfileModal({
                   <div className="wallet-card-info">
                     <span className="wallet-card-icon">🌌</span>
                     <div>
-                      <h4 className="wallet-card-name">Billetera Kosmovia (Passkey)</h4>
+                      <h4 className="wallet-card-name">Billetera Kosmovia (Pollar)</h4>
                       <span className="wallet-badge-primary">Principal · Stellar Testnet</span>
                     </div>
                   </div>
@@ -161,19 +183,11 @@ export function ProfileModal({
                       <span className="wallet-badge-sub">Billetera oficial de Stellar</span>
                     </div>
                   </div>
-                  <button
-                    type="button"
-                    className={`btn-connect-wallet ${isFreighterConnected ? 'connected' : ''}`}
-                    onClick={() => setIsFreighterConnected((prev) => !prev)}
-                  >
-                    {isFreighterConnected ? 'Desconectar' : 'Conectar'}
+                  <button type="button" className="btn-connect-wallet" disabled title="Vincular una segunda wallet llega más adelante">
+                    Próximamente
                   </button>
                 </div>
-                {isFreighterConnected && (
-                  <p className="wallet-card-address">
-                    GA7K...FREIGHTER...92KL (Vinculada con tu cuenta)
-                  </p>
-                )}
+
               </div>
 
               {/* Billetera Externa: MetaMask / EVM */}
@@ -186,19 +200,11 @@ export function ProfileModal({
                       <span className="wallet-badge-sub">Ethereum, Arbitrum, Polygon</span>
                     </div>
                   </div>
-                  <button
-                    type="button"
-                    className={`btn-connect-wallet ${isMetaMaskConnected ? 'connected' : ''}`}
-                    onClick={() => setIsMetaMaskConnected((prev) => !prev)}
-                  >
-                    {isMetaMaskConnected ? 'Desconectar' : 'Conectar'}
+                  <button type="button" className="btn-connect-wallet" disabled title="Las wallets EVM llegan más adelante">
+                    Próximamente
                   </button>
                 </div>
-                {isMetaMaskConnected && (
-                  <p className="wallet-card-address">
-                    0x71C...METAMASK...3b1A (Vinculada para swaps multi-cadena)
-                  </p>
-                )}
+
               </div>
             </div>
 
@@ -218,7 +224,7 @@ export function ProfileModal({
                 <span className="kyc-icon-badge">🛡️</span>
                 <div>
                   <h4 className="kyc-title">Estado de Identidad</h4>
-                  <span className="kyc-level-tag">Nivel 2: Verificado en Stellar Testnet</span>
+                  <span className="kyc-level-tag">{levelText}</span>
                 </div>
               </div>
             </div>
@@ -228,7 +234,7 @@ export function ProfileModal({
                 <span className="perk-check">✓</span>
                 <div>
                   <strong>Comisiones patrocinadas</strong>
-                  <p>OpenZeppelin Relayer asume tus tarifas en la red Stellar.</p>
+                  <p>Pollar activa tu wallet y habilita USDC sin que pagues la reserva (según la configuración de la app).</p>
                 </div>
               </div>
 
@@ -243,8 +249,8 @@ export function ProfileModal({
               <div className="kyc-perk-item">
                 <span className="perk-check">✓</span>
                 <div>
-                  <strong>Autenticación Passkeys (WebAuthn)</strong>
-                  <p>Acceso seguro biométrico sin custodiar claves privadas.</p>
+                  <strong>Entrar sin seed phrase</strong>
+                  <p>Con Google, email o Freighter vía Pollar: nunca ves ni guardas claves privadas.</p>
                 </div>
               </div>
             </div>

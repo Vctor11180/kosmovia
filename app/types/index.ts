@@ -7,6 +7,9 @@ export interface User {
   isOnline?: boolean;
   bio?: string;
   statusText?: string;
+  // Campos de core (mismo contrato que core/types/index.ts)
+  wallet?: string; // dirección Stellar (G...)
+  trustLevel?: 0 | 1 | 2; // 0 wallet · 1 social (X verificado) · 2 empresa
 }
 
 export interface Channel {

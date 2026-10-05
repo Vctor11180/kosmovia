@@ -39,6 +39,7 @@ type ProfileRow = {
   avatar_seed: string | null;
   avatar_style: string | null;
   bio: string | null;
+  trust_level?: number | null;
 };
 type AuthorRow = Pick<ProfileRow, 'id' | 'username' | 'display_name' | 'avatar_seed' | 'avatar_style'>;
 type CommunityRow = { id: string; slug: string; name: string; icon: string | null; description: string | null };
@@ -74,15 +75,22 @@ function avatarUri(seed: string | null, style: string | null, fallback: string):
   return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
 }
 
-function toUser(p: AuthorRow & { bio?: string | null }, role?: string): User {
+/**
+ * `role` solo para la lista de miembros (en los mensajes no se conoce). No hay
+ * presencia en tiempo real todavía: solo quien está conectado sale "en línea".
+ */
+function toUser(p: AuthorRow & Partial<Pick<ProfileRow, 'bio' | 'wallet' | 'trust_level'>>, opts: { role?: string; online?: boolean } = {}): User {
+  const level = p.trust_level === 1 || p.trust_level === 2 ? p.trust_level : 0;
   return {
     id: p.id,
     username: `@${p.username}`,
     displayName: p.display_name || p.username,
     avatar: avatarUri(p.avatar_seed, p.avatar_style, p.id),
-    role: role === 'owner' || role === 'admin' ? 'admin' : 'member',
-    isOnline: true,
+    role: opts.role === undefined ? undefined : opts.role === 'owner' || opts.role === 'admin' ? 'admin' : 'member',
+    isOnline: opts.online ?? false,
     bio: p.bio ?? undefined,
+    wallet: p.wallet,
+    trustLevel: level,
   };
 }
 
@@ -108,7 +116,7 @@ export class ApiAuthService implements IAuthService {
   async getCurrentUser(): Promise<User> {
     const { profile } = await call<{ profile: ProfileRow | null }>('/api/profile');
     if (!profile) throw new ApiError('Todavía no tienes perfil.');
-    return toUser(profile);
+    return toUser(profile, { online: true });
   }
 
   async updateProfile(data: { displayName: string; bio: string }): Promise<User> {
@@ -116,7 +124,7 @@ export class ApiAuthService implements IAuthService {
       method: 'PATCH',
       body: { displayName: data.displayName, bio: data.bio },
     });
-    return toUser(profile);
+    return toUser(profile, { online: true });
   }
 
   /** El login real es con Pollar (app/login): aquí solo se devuelve el perfil de la sesión. */
@@ -144,7 +152,7 @@ export class ApiCommunityService implements ICommunityService {
       icon: c.icon || c.name.trim().charAt(0).toUpperCase() || '🚀',
       description: c.description ?? '',
       channels: channels.map(toChannel),
-      members: members.map((m) => toUser(m.profile, m.role)),
+      members: members.map((m) => toUser(m.profile, { role: m.role })),
     };
   }
 

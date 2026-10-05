@@ -5,7 +5,8 @@ import React, { useState } from 'react';
 interface CreateChannelModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onCreate: (name: string, topic: string) => void;
+  /** true si se creó; false deja el modal abierto (el error lo muestra la página). */
+  onCreate: (name: string, topic: string) => Promise<boolean> | void;
 }
 
 export function CreateChannelModal({
@@ -15,14 +16,29 @@ export function CreateChannelModal({
 }: CreateChannelModalProps) {
   const [name, setName] = useState('');
   const [topic, setTopic] = useState('');
+  const [saving, setSaving] = useState(false);
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Lo que acepta el servidor: minúsculas, números y guiones, hasta 30 (sin tildes ni espacios).
+  const cleanName = name
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9-]/g, '')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 30);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const cleanName = name.trim().toLowerCase().replace(/\s+/g, '-');
-    if (!cleanName) return;
-    onCreate(cleanName, topic.trim());
+    if (!cleanName || saving) return;
+    setSaving(true);
+    const ok = await onCreate(cleanName, topic.trim().slice(0, 200));
+    setSaving(false);
+    if (ok === false) return;
     setName('');
     setTopic('');
     onClose();
@@ -53,7 +69,7 @@ export function CreateChannelModal({
               />
             </div>
             <span className="form-hint">
-              Solo letras minúsculas, números y guiones.
+              {cleanName && cleanName !== name.trim() ? `Se creará como #${cleanName}` : 'Solo letras minúsculas, números y guiones.'}
             </span>
           </div>
 
@@ -75,9 +91,9 @@ export function CreateChannelModal({
             <button
               type="submit"
               className="btn-primary"
-              disabled={!name.trim()}
+              disabled={!cleanName || saving}
             >
-              Crear Canal
+              {saving ? 'Creando…' : 'Crear Canal'}
             </button>
           </div>
         </form>

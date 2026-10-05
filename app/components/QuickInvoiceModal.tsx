@@ -13,16 +13,18 @@ export function QuickInvoiceModal({
   onClose,
   onSubmit,
 }: QuickInvoiceModalProps) {
-  const [amount, setAmount] = useState('25');
-  const [concept, setConcept] = useState('Servicios de Desarrollo B2B');
+  const [amount, setAmount] = useState('');
+  const [concept, setConcept] = useState('');
 
   if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const num = parseFloat(amount);
-    if (isNaN(num) || num <= 0) return;
-    onSubmit(num, concept.trim());
+    const num = parseFloat(amount.replace(',', '.'));
+    if (isNaN(num) || num < 0.01 || !concept.trim()) return;
+    onSubmit(Math.round(num * 100) / 100, concept.trim().slice(0, 200));
+    setAmount('');
+    setConcept('');
     onClose();
   };
 
@@ -45,8 +47,9 @@ export function QuickInvoiceModal({
             <label className="form-label">Monto (USDC)</label>
             <input
               type="number"
-              min="1"
-              step="0.5"
+              min="0.01"
+              step="0.01"
+              placeholder="0.01"
               className="form-input"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}

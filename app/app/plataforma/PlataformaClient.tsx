@@ -22,6 +22,7 @@ import {
   INITIAL_MESSAGES,
   INITIAL_TRANSACTIONS,
   INITIAL_SETTLEMENTS,
+  SERVICES_MODE,
 } from '../../services';
 
 export function PlataformaPage() {
@@ -50,6 +51,10 @@ export function PlataformaPage() {
   const [settlements, setSettlements] = useState<SettlementRecord[]>(INITIAL_SETTLEMENTS);
   // Borrador de integración: estado visible del pago (antes solo iba a la consola).
   const [payNotice, setPayNotice] = useState<{ kind: 'info' | 'ok' | 'error'; text: string } | null>(null);
+  // En modo api no se muestra nada hasta tener los datos reales (sin parpadeo de los de ejemplo).
+  const [ready, setReady] = useState<boolean>(SERVICES_MODE !== 'api');
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const errorText = (err: unknown, fallback: string) => (err instanceof Error && err.message ? err.message : fallback);
 
   // Sincronizar tema con atributo en documentElement
   useEffect(() => {
@@ -89,8 +94,10 @@ export function PlataformaPage() {
             setActiveChannelId(comms[0].channels[0].id);
           }
         }
+        setReady(true);
       } catch (err) {
         console.error('[PlataformaPage] Error loading initial service data:', err);
+        if (isMounted) setLoadError(errorText(err, 'No se pudieron cargar tus datos.'));
       }
     }
 
@@ -100,6 +107,23 @@ export function PlataformaPage() {
       isMounted = false;
     };
   }, []);
+
+  // Al abrir la billetera: saldo e historial al día (también los pagos que te llegaron).
+  useEffect(() => {
+    if (!isWalletOpen || SERVICES_MODE !== 'api') return;
+    let isMounted = true;
+    Promise.all([walletService.getBalances(publicKey), walletService.getTransactions(publicKey)])
+      .then(([balances, txs]) => {
+        if (!isMounted) return;
+        setBalanceUSDC(balances.usdc);
+        setBalanceXLM(balances.xlm);
+        setTransactions(txs);
+      })
+      .catch(() => {});
+    return () => {
+      isMounted = false;
+    };
+  }, [isWalletOpen, publicKey]);
 
   // Suscripción en tiempo real y carga de mensajes por canal activo
   useEffect(() => {
@@ -168,10 +192,11 @@ export function PlataformaPage() {
       });
     } catch (err) {
       console.error('[PlataformaPage] Error sending message:', err);
+      setPayNotice({ kind: 'error', text: errorText(err, 'No se pudo enviar el mensaje.') });
     }
   };
 
-  const handleCreateChannel = async (name: string, topic: string) => {
+  const handleCreateChannel = async (name: string, topic: string): Promise<boolean> => {
     try {
       const newChannel = await communityService.createChannel(activeCommunity.id, {
         name,
@@ -194,8 +219,11 @@ export function PlataformaPage() {
         `🎉 Canal #${name} creado con éxito. ¡Inicia la conversación!`,
         currentUser
       );
+      return true;
     } catch (err) {
       console.error('[PlataformaPage] Error creating channel:', err);
+      setPayNotice({ kind: 'error', text: errorText(err, 'No se pudo crear el canal.') });
+      return false;
     }
   };
 
@@ -204,11 +232,13 @@ export function PlataformaPage() {
     handleSendMessage(`[COBRO_B2B:${payload}]`);
   };
 
-  const handlePayInvoice = async (amount: number, concept: string) => {
+  /** Paga un cobro B2B a quien lo emitió (el autor del mensaje con la tarjeta). */
+  const handlePayInvoice = async (amount: number, concept: string, payee: string): Promise<boolean> => {
+    setPayNotice({ kind: 'info', text: `Pagando ${amount} USDC a ${payee}… (si usas Freighter, confirma ahí)` });
     try {
       // 1. Ejecutar pago no-custodia con servicio de wallet
       const newTx = await walletService.sendPayment({
-        to: `#${activeChannel.name}`,
+        to: SERVICES_MODE === 'api' ? payee : `#${activeChannel.name}`,
         amount,
         asset: 'USDC',
       });
@@ -231,8 +261,12 @@ export function PlataformaPage() {
         `✅ Cobro saldado: ${amount} USDC por "${concept}". Fee 0.5% deducido (${newSettlement.feeUSDC} USDC). Transacción confirmada en Stellar Testnet.`,
         currentUser
       );
+      setPayNotice({ kind: 'ok', text: `Cobro pagado: ${amount} USDC a ${payee}.` });
+      return true;
     } catch (err) {
       console.error('[PlataformaPage] Error paying invoice:', err);
+      setPayNotice({ kind: 'error', text: errorText(err, 'No se pudo pagar el cobro.') });
+      return false;
     }
   };
 
@@ -246,16 +280,19 @@ export function PlataformaPage() {
     }
   };
 
-  const handleUpdateProfile = async (updated: { displayName: string; bio: string }) => {
+  const handleUpdateProfile = async (updated: { displayName: string; bio: string }): Promise<boolean> => {
     try {
       const user = await authService.updateProfile(updated);
       setCurrentUser(user);
+      return true;
     } catch (err) {
       console.error('[PlataformaPage] Error updating profile:', err);
+      setPayNotice({ kind: 'error', text: errorText(err, 'No se pudo guardar tu perfil.') });
+      return false;
     }
   };
 
-  const handleSendPayment = async (to: string, amount: number, asset: 'USDC' | 'XLM') => {
+  const handleSendPayment = async (to: string, amount: number, asset: 'USDC' | 'XLM'): Promise<boolean> => {
     setPayNotice({ kind: 'info', text: `Enviando ${amount} ${asset} a ${to}… (si usas Freighter, confirma ahí)` });
     try {
       const newTx = await walletService.sendPayment({
@@ -274,16 +311,33 @@ export function PlataformaPage() {
         activeChannel.id,
         `💸 He transferido ${amount} ${asset} a ${to} mediante Stellar Testnet (Tx verificada).`,
         currentUser
-      );
+      ).catch(() => {});
+      return true;
     } catch (err) {
       console.error('[PlataformaPage] Error sending payment:', err);
-      setPayNotice({ kind: 'error', text: err instanceof Error ? err.message : 'No se pudo enviar el pago.' });
+      setPayNotice({ kind: 'error', text: errorText(err, 'No se pudo enviar el pago.') });
+      return false;
     }
   };
 
   const currentMembers = (activeCommunity.members || []).map((m) =>
-    m.id === currentUser.id ? { ...m, ...currentUser } : m
+    m.id === currentUser.id ? { ...m, ...currentUser, role: m.role ?? currentUser.role } : m
   );
+
+  if (!ready) {
+    return (
+      <div className="login-page-container">
+        <div className="login-box" role={loadError ? 'alert' : 'status'}>
+          <p className="login-subtitle">{loadError ?? 'Cargando tus comunidades y tu billetera…'}</p>
+          {loadError ? (
+            <button type="button" className="btn-login-submit" onClick={() => window.location.reload()}>
+              Reintentar
+            </button>
+          ) : null}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`app-container ${isMobileOpen ? 'mobile-open' : ''}`}>
@@ -316,7 +370,9 @@ export function PlataformaPage() {
         onToggleMobileMenu={() => setIsMobileOpen((prev) => !prev)}
         onToggleMemberList={() => setIsMemberListOpen((prev) => !prev)}
         isMemberListOpen={isMemberListOpen}
-        onOpenWallet={() => setIsWalletOpen(true)}
+        onOpenWallet={() => setIsWalletOpen((prev) => !prev)}
+        isWalletOpen={isWalletOpen}
+        currentUserId={currentUser.id}
         balanceUSDC={balanceUSDC}
         theme={theme}
         onToggleTheme={handleToggleTheme}

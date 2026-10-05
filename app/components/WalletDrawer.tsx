@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { SettlementRecord, WalletTransaction } from '../types';
+import { QrCode } from './QrCode';
 
 interface WalletDrawerProps {
   isOpen: boolean;
@@ -10,7 +11,8 @@ interface WalletDrawerProps {
   balanceXLM: number;
   publicKey: string;
   transactions: WalletTransaction[];
-  onSend: (to: string, amount: number, asset: 'USDC' | 'XLM') => void;
+  /** true si el pago salió; false deja el formulario abierto (el error lo muestra la página). */
+  onSend: (to: string, amount: number, asset: 'USDC' | 'XLM') => Promise<boolean> | void;
   settlements?: SettlementRecord[];
   onDisbursePending?: () => void;
 }
@@ -28,8 +30,8 @@ export function WalletDrawer({
 }: WalletDrawerProps) {
   const [activeTab, setActiveTab] = useState<'wallet' | 'settlements'>('wallet');
   const [view, setView] = useState<'overview' | 'send' | 'receive'>('overview');
-  const [recipient, setRecipient] = useState('@roberto');
-  const [amount, setAmount] = useState('15');
+  const [recipient, setRecipient] = useState('');
+  const [amount, setAmount] = useState('0.01');
   const [asset, setAsset] = useState<'USDC' | 'XLM'>('USDC');
   const [copied, setCopied] = useState(false);
   const [isSending, setIsSending] = useState(false);
@@ -44,16 +46,19 @@ export function WalletDrawer({
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleSendSubmit = (e: React.FormEvent) => {
+  // Espera el resultado real: vuelve al saldo solo si el pago salió.
+  const handleSendSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const num = parseFloat(amount);
-    if (isNaN(num) || num <= 0) return;
+    const num = parseFloat(amount.replace(',', '.'));
+    if (isNaN(num) || num < 0.01 || isSending) return;
     setIsSending(true);
-    setTimeout(() => {
-      onSend(recipient, num, asset);
-      setIsSending(false);
+    const ok = await onSend(recipient.trim(), num, asset);
+    setIsSending(false);
+    if (ok !== false) {
       setView('overview');
-    }, 600);
+      setRecipient('');
+      setAmount('0.01');
+    }
   };
 
   // Cálculo de métricas de liquidaciones B2B
@@ -132,7 +137,7 @@ export function WalletDrawer({
                     {balanceUSDC.toFixed(2)} <span className="wallet-asset-tag">USDC</span>
                   </div>
                   <div className="wallet-balance-sub">
-                    ≈ {balanceXLM.toFixed(2)} XLM (Gas patrocinado)
+                    {balanceXLM.toFixed(2)} XLM para comisiones de red
                   </div>
                   <div className="wallet-key-bar">
                     <span className="wallet-key-text">
@@ -223,7 +228,7 @@ export function WalletDrawer({
                       <input
                         type="number"
                         step="0.01"
-                        min="0.1"
+                        min="0.01"
                         className="form-input"
                         value={amount}
                         onChange={(e) => setAmount(e.target.value)}
@@ -242,7 +247,7 @@ export function WalletDrawer({
 
                   <div className="wallet-fee-hint">
                     <span>Comisión de red:</span>
-                    <span className="free-tag">0.00 XLM (Patrocinada)</span>
+                    <span className="free-tag">≈ 0.00001 XLM</span>
                   </div>
 
                   <button
@@ -250,7 +255,7 @@ export function WalletDrawer({
                     className="btn-login-submit"
                     disabled={isSending}
                   >
-                    {isSending ? 'Firmando con Passkey...' : `Transferir ${amount} ${asset}`}
+                    {isSending ? 'Enviando… (si usas Freighter, confirma ahí)' : `Transferir ${amount} ${asset}`}
                   </button>
                 </form>
               </div>
@@ -263,7 +268,9 @@ export function WalletDrawer({
                 </button>
                 <h3 className="wallet-form-title">Recibir en Stellar Testnet</h3>
                 <div className="qr-placeholder-card">
-                  <div className="qr-icon-large">📱</div>
+                  <div className="qr-icon-large">
+                    {publicKey ? <QrCode value={publicKey} label="QR de tu dirección Stellar" /> : '📱'}
+                  </div>
                   <span className="qr-title">Código QR de tu Billetera</span>
                   <p className="wallet-key-full">{publicKey}</p>
                   <button type="button" className="btn-copy-key primary" onClick={handleCopy}>

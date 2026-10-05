@@ -17,7 +17,10 @@ interface ChatAreaProps {
   theme?: 'dark' | 'light';
   onToggleTheme?: () => void;
   onOpenQuickInvoice?: () => void;
-  onPayInvoice?: (amount: number, concept: string) => void;
+  /** Paga el cobro a quien lo emitió (`payee` = @usuario del autor). true si el pago salió. */
+  onPayInvoice?: (amount: number, concept: string, payee: string) => Promise<boolean> | void;
+  isWalletOpen?: boolean;
+  currentUserId?: string;
 }
 
 export function ChatArea({
@@ -34,9 +37,12 @@ export function ChatArea({
   onToggleTheme,
   onOpenQuickInvoice,
   onPayInvoice,
+  isWalletOpen,
+  currentUserId,
 }: ChatAreaProps) {
   const [inputText, setInputText] = useState('');
   const [paidInvoices, setPaidInvoices] = useState<Record<string, boolean>>({});
+  const [payingInvoice, setPayingInvoice] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -51,12 +57,13 @@ export function ChatArea({
     setInputText('');
   };
 
-  const handlePay = (msgId: string, amount: number, concept: string) => {
-    if (paidInvoices[msgId]) return;
-    setPaidInvoices((prev) => ({ ...prev, [msgId]: true }));
-    if (onPayInvoice) {
-      onPayInvoice(amount, concept);
-    }
+  // Se marca pagado solo si el pago salió de verdad.
+  const handlePay = async (msgId: string, amount: number, concept: string, payee: string) => {
+    if (paidInvoices[msgId] || payingInvoice || !onPayInvoice) return;
+    setPayingInvoice(msgId);
+    const ok = await onPayInvoice(amount, concept, payee);
+    setPayingInvoice(null);
+    if (ok !== false) setPaidInvoices((prev) => ({ ...prev, [msgId]: true }));
   };
 
   return (
@@ -85,10 +92,17 @@ export function ChatArea({
               type="button"
               className="header-wallet-pill"
               onClick={onOpenWallet}
-              title="Abrir Billetera Stellar"
+              title={isWalletOpen ? 'Cerrar Mi Wallet' : 'Abrir Mi Wallet'}
+              aria-expanded={isWalletOpen}
+              style={isWalletOpen ? { position: 'relative', zIndex: 95 } : undefined}
             >
               <span className="wallet-dot" />
-              <span>{balanceUSDC !== undefined ? balanceUSDC.toFixed(2) : '150.00'} USDC</span>
+              <span style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.15, textAlign: 'left' }}>
+                <span>Mi Wallet</span>
+                <small style={{ fontSize: 11, fontWeight: 600, opacity: 0.8 }}>
+                  {balanceUSDC !== undefined ? `${balanceUSDC.toFixed(2)} USDC` : '…'}
+                </small>
+              </span>
             </button>
           )}
 
@@ -152,14 +166,21 @@ export function ChatArea({
             let invoiceData: { amount: number; concept: string } | null = null;
             if (isInvoice) {
               try {
-                const raw = msg.content.replace('[COBRO_B2B:', '').replace(']', '');
-                invoiceData = JSON.parse(raw);
+                // El JSON va entre '[COBRO_B2B:' y el último ']' (el concepto puede tener corchetes).
+                const raw = msg.content.slice('[COBRO_B2B:'.length, msg.content.lastIndexOf(']'));
+                const parsed = JSON.parse(raw);
+                invoiceData =
+                  typeof parsed?.amount === 'number' && parsed.amount > 0 && typeof parsed?.concept === 'string'
+                    ? { amount: parsed.amount, concept: parsed.concept }
+                    : null;
               } catch {
                 invoiceData = null;
               }
             }
 
             const isPaid = paidInvoices[msg.id];
+            const isMine = currentUserId !== undefined && msg.author.id === currentUserId;
+            const isPaying = payingInvoice === msg.id;
 
             return (
               <article key={msg.id} className="message-item">
@@ -185,10 +206,17 @@ export function ChatArea({
                       <button
                         type="button"
                         className={`btn-pay-invoice ${isPaid ? 'paid' : ''}`}
-                        onClick={() => invoiceData && handlePay(msg.id, invoiceData.amount, invoiceData.concept)}
-                        disabled={isPaid}
+                        onClick={() => invoiceData && void handlePay(msg.id, invoiceData.amount, invoiceData.concept, msg.author.username)}
+                        disabled={isPaid || isMine || isPaying || payingInvoice !== null}
+                        title={isMine ? 'Es tu propio cobro' : undefined}
                       >
-                        {isPaid ? '✓ Pago Confirmado en Testnet' : `Pagar ${invoiceData.amount} USDC`}
+                        {isPaid
+                          ? '✓ Pago Confirmado en Testnet'
+                          : isMine
+                            ? 'Tu cobro: esperando pago'
+                            : isPaying
+                              ? 'Pagando…'
+                              : `Pagar ${invoiceData.amount} USDC a ${msg.author.username}`}
                       </button>
                     </div>
                   ) : (
@@ -217,6 +245,7 @@ export function ChatArea({
           <input
             type="text"
             className="chat-input-field"
+            maxLength={2000}
             placeholder={`Enviar mensaje a #${channel.name}... (o usa 💸 para emitir un cobro)`}
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
