@@ -128,6 +128,9 @@ test("un error sin hash es 'desconocido': nunca se trata como 'no se envió'", (
   assert.equal(classifySubmit({ status: "pending" }), "unknown");
   assert.equal(classifySubmit({ status: "error", code: "TX_INSUFFICIENT_BALANCE" }), "rejected");
   assert.equal(rejectionReason({ status: "error", code: "TX_NO_TRUSTLINE" }), "destination");
+  // La wallet de Pollar no terminó de crearse: nada se armó ni se firmó.
+  assert.equal(classifySubmit({ status: "error", code: "SDK_WALLET_NOT_READY" }), "rejected");
+  assert.match(rejectionMessage("notReady"), /Sal y vuelve a entrar/);
   assert.equal(rejectionReason({ status: "error", details: "User declined access" }), "declined");
   assert.equal(rejectionReason({ status: "error", details: "No wallet connected" }), "noWallet");
   // Only the whole message counts, never a substring.
