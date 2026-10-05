@@ -1,11 +1,18 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Kosmovia · Explore. Connect. Belong.",
-  description:
-    "A free social network for Stellar: communities, a feed, a built-in wallet and mini apps that run inside.",
+  metadataBase: new URL("https://kosmovia.vercel.app"),
 };
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#FFFFFF" },
+    { media: "(prefers-color-scheme: dark)", color: "#061314" },
+  ],
+};
+
+const themeScript = `try{var d=document.documentElement;d.classList.add("js-reveal");setTimeout(function(){if(!d.hasAttribute("data-rv"))d.classList.remove("js-reveal")},4000);var t=localStorage.getItem("theme");if(t==="light"||t==="dark"){document.documentElement.setAttribute("data-theme",t)}}catch(e){}`;
 
 export default function RootLayout({
   children,
@@ -13,8 +20,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body>{children}</body>
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+      </head>
+      <body>
+        {children}
+      </body>
     </html>
   );
 }
