@@ -45,6 +45,10 @@ type Load =
 
 function WalletInner() {
   const { user, isLoading } = usePollarAuth();
+  // Las wallets que crea Pollar (Google/email) las crea y fondea Pollar. Friendbot
+  // crearía la cuenta por fuera y Pollar ya no podría terminar de crearla
+  // (SDK_WALLET_NOT_READY), así que el botón de XLM es solo para Freighter.
+  const custodial = user?.wallet?.custody === "internal";
   const { status: setup } = useAccountSetup();
   const address = user?.address ?? null;
   const { profile } = useProfile();
@@ -148,8 +152,9 @@ function WalletInner() {
         )}
         {load.step === "ready" && !load.balances.exists && (
           <p className="muted" style={{ margin: 0 }}>
-            Tu cuenta todavía no existe en la red de prueba. Si recién entraste, espera unos segundos; si no
-            aparece, pulsa Recargar XLM de prueba.
+            {custodial
+              ? "Pollar está creando tu wallet en la red de prueba. Espera unos segundos y recarga; si no aparece, sal y vuelve a entrar."
+              : "Tu cuenta todavía no existe en la red de prueba. Si recién entraste, espera unos segundos; si no aparece, pulsa Recargar XLM de prueba."}
           </p>
         )}
         {load.step === "ready" && load.balances.exists && (
@@ -194,9 +199,11 @@ function WalletInner() {
           Solo testnet: estos fondos no tienen valor real.
         </p>
         <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-          <button type="button" className="btn btn-primary" onClick={fundXlm} disabled={faucet.busy}>
-            {faucet.busy ? "Pidiendo…" : "Recargar XLM de prueba"}
-          </button>
+          {custodial ? null : (
+            <button type="button" className="btn btn-primary" onClick={fundXlm} disabled={faucet.busy}>
+              {faucet.busy ? "Pidiendo…" : "Recargar XLM de prueba"}
+            </button>
+          )}
           <a className="btn" href={USDC_FAUCET_URL} target="_blank" rel="noreferrer">
             USDC de prueba (faucet.circle.com)
           </a>
