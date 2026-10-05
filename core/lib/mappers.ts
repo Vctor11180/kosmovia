@@ -55,7 +55,7 @@ export interface MessageRow {
   created_at: string;
 }
 
-export type MemberRole = "owner" | "admin" | "member";
+export type MemberRole = "owner" | "admin" | "moderator" | "member";
 
 export interface MemberRow {
   community_id: string;
@@ -136,7 +136,7 @@ export function mapMessage(row: MessageRow, author: User): Message {
 }
 
 export function asRole(value: string | null | undefined): MemberRole | null {
-  return value === "owner" || value === "admin" || value === "member" ? value : null;
+  return value === "owner" || value === "admin" || value === "moderator" || value === "member" ? value : null;
 }
 
 /** Adds `incoming` to `list` without duplicates (by id), ordered by createdAt then id. */

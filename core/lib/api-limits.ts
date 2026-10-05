@@ -21,6 +21,8 @@ export const API_LIMITS = {
   /** Each try asks Horizon; the client retries a pending payment a few times. */
   paymentRecord: { max: 60, windowMs: 10 * MINUTE },
   paymentRead: { max: 60, windowMs: MINUTE },
+  /** Cambiar roles y borrar canales o comunidades: poco frecuente. */
+  communityManage: { max: 60, windowMs: HOUR },
 } as const;
 
 export type LimitKind = keyof typeof API_LIMITS;
@@ -39,6 +41,7 @@ const MESSAGES: Record<LimitKind, string> = {
   messageRead: "Demasiadas consultas. Espera un momento.",
   paymentRecord: "Registraste muchos pagos seguidos. Espera un momento e intenta de nuevo.",
   paymentRead: "Demasiadas consultas. Espera un momento.",
+  communityManage: "Hiciste muchos cambios seguidos. Espera un momento e intenta de nuevo.",
 };
 
 /** A 429 Response when `profileId` is over the limit for `kind`, else null (and the hit is recorded). */
