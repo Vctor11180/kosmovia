@@ -36,6 +36,7 @@ async function one<T = Record<string, unknown>>(query: q.Query | null): Promise<
 
 export const getProfileById = (id: string) => one<ProfileRow>(q.profileById(id));
 export const getProfileByUsername = (username: string) => one<ProfileRow>(q.profileByUsername(username));
+export const getProfileByWallet = (wallet: string) => one<ProfileRow>(q.profileByWallet(wallet));
 
 export async function takenUsernames(names: string[]): Promise<Set<string>> {
   if (names.length === 0) return new Set();
@@ -199,3 +200,37 @@ export async function postMessage(
   }
   return { ok: true, value: row };
 }
+
+// ----------------------------------------------------------------- payments
+
+export type PaymentParty = { username: string; display_name: string; avatar_seed: string | null; avatar_style: string | null };
+
+export type PaymentWire = {
+  id: string;
+  tx_hash: string;
+  from_wallet: string;
+  to_wallet: string;
+  asset: "XLM" | "USDC";
+  amount: string;
+  note: string | null;
+  paid_at: string;
+  from_profile: PaymentParty | null;
+  to_profile: PaymentParty | null;
+};
+
+export type RecordOutcome = { status: "created" | "existing"; payment: PaymentWire } | { status: "conflict" };
+
+/**
+ * Records a payment the server already verified on Horizon. `fromWallet` and
+ * `registeredBy` come from the session. Recording the same operation again
+ * returns the existing row to its sender and a conflict to anyone else.
+ */
+export async function recordPayment(p: q.NewPayment): Promise<RecordOutcome> {
+  const created = await one<PaymentWire>(q.insertPayment(p));
+  if (created) return { status: "created", payment: created };
+  const existing = await one<PaymentWire>(q.paymentByOpForSender(p.opId, p.fromWallet));
+  return existing ? { status: "existing", payment: existing } : { status: "conflict" };
+}
+
+export const listPayments = (wallet: string, limit = 50) =>
+  run<PaymentWire>(q.paymentsOfWallet(wallet, Math.min(Math.max(limit, 1), 100)));

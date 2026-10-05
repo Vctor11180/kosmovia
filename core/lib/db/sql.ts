@@ -44,6 +44,12 @@ export const profileByUsername = (username: string): Query => ({
   values: [username],
 });
 
+/** The profile that owns a Stellar address (wallet is unique). */
+export const profileByWallet = (wallet: string): Query => ({
+  text: `select ${PROFILE_COLUMNS} from public.profiles p where p.wallet = $1`,
+  values: [wallet],
+});
+
 /** Which of these usernames (already lowercase) are taken. */
 export const takenUsernames = (names: string[]): Query => ({
   text: "select lower(p.username) as username from public.profiles p where lower(p.username) = any($1::text[])",
@@ -284,6 +290,56 @@ export const insertMessage = (channelId: string, authorId: string, content: stri
   values: [channelId, authorId, content],
 });
 
+// ----------------------------------------------------------------- payments
+
+export interface NewPayment {
+  opId: string;
+  txHash: string;
+  fromWallet: string;
+  toWallet: string;
+  asset: string;
+  amount: string;
+  note: string | null;
+  registeredBy: string;
+  paidAt: string;
+}
+
+const PARTY_JSON = (alias: string) =>
+  `case when ${alias}.id is null then null else json_build_object('username', ${alias}.username, 'display_name', ${alias}.display_name, ` +
+  `'avatar_seed', ${alias}.avatar_seed, 'avatar_style', ${alias}.avatar_style) end`;
+
+/** What a payment looks like on the wire: the row plus both sides' slim profiles (null for wallets without one). */
+const PAYMENT_SELECT =
+  `py.id, py.tx_hash, py.from_wallet, py.to_wallet, py.asset, py.amount::text as amount, py.note, ${isoUs("py.paid_at")} as paid_at, ` +
+  `${PARTY_JSON("pf")} as from_profile, ${PARTY_JSON("pt")} as to_profile`;
+const PAYMENT_FROM =
+  "from public.payments py left join public.profiles pf on pf.wallet = py.from_wallet left join public.profiles pt on pt.wallet = py.to_wallet";
+
+/** Records a verified payment once: a second call for the same operation inserts nothing. */
+export const insertPayment = (p: NewPayment): Query => ({
+  text:
+    "with ins as (" +
+    "insert into public.payments (op_id, tx_hash, from_wallet, to_wallet, asset, amount, note, registered_by, paid_at) " +
+    "values ($1, $2, $3, $4, $5, $6::numeric, $7, $8, $9::timestamptz) on conflict (op_id) do nothing returning *) " +
+    `select ${PAYMENT_SELECT} from ins py ` +
+    "left join public.profiles pf on pf.wallet = py.from_wallet left join public.profiles pt on pt.wallet = py.to_wallet",
+  values: [p.opId, p.txHash, p.fromWallet, p.toWallet, p.asset, p.amount, p.note, p.registeredBy, p.paidAt],
+});
+
+/** An already recorded operation, only if `wallet` sent it. */
+export const paymentByOpForSender = (opId: string, wallet: string): Query => ({
+  text: `select ${PAYMENT_SELECT} ${PAYMENT_FROM} where py.op_id = $1 and py.from_wallet = $2`,
+  values: [opId, wallet],
+});
+
+/** Payments `wallet` sent or received, newest first. */
+export const paymentsOfWallet = (wallet: string, limit: number): Query => ({
+  text:
+    `select ${PAYMENT_SELECT} ${PAYMENT_FROM} where py.from_wallet = $1 or py.to_wallet = $1 ` +
+    "order by py.paid_at desc, py.id desc limit $2",
+  values: [wallet, limit],
+});
+
 // --------------------------------------------------------------- migrations
 
-export const SCHEMA_TABLES = ["profiles", "communities", "members", "channels", "messages"] as const;
+export const SCHEMA_TABLES = ["profiles", "communities", "members", "channels", "messages", "payments"] as const;

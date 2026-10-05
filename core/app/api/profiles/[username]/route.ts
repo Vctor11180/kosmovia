@@ -1,4 +1,4 @@
-import { cleanUsernameParam } from "../../../../lib/api-input.ts";
+import { cleanUsernameParam, cleanWalletParam } from "../../../../lib/api-input.ts";
 import { failure, gate, handled, json, type Params } from "../../../../lib/api-route.ts";
 import * as repo from "../../../../lib/db/repo.ts";
 
@@ -10,15 +10,19 @@ export const dynamic = "force-dynamic";
  *
  * A public profile, like the `profiles_select_public` policy of the Supabase
  * schema: no session needed. -> { profile: ProfileRow }, or 404.
+ * The param can also be a G-address: the profile that owns that wallet (so a
+ * pasted address shows who it is before sending money).
  */
 export async function GET(request: Request, ctx: Params<{ username: string }>): Promise<Response> {
   const g = gate(request, "optional");
   if (!g.ok) return g.response;
-  const username = cleanUsernameParam((await ctx.params).username);
-  if (!username) return failure(404, "Perfil no encontrado.", "not_found");
+  const raw = (await ctx.params).username;
+  const wallet = cleanWalletParam(raw);
+  const username = wallet ? null : cleanUsernameParam(raw);
+  if (!wallet && !username) return failure(404, "Perfil no encontrado.", "not_found");
 
   return handled("GET /api/profiles/:username", async () => {
-    const profile = await repo.getProfileByUsername(username);
+    const profile = wallet ? await repo.getProfileByWallet(wallet) : await repo.getProfileByUsername(username as string);
     if (!profile) return failure(404, "Perfil no encontrado.", "not_found");
     return json({ profile });
   });

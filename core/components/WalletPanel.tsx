@@ -2,12 +2,24 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
+import { usePollar } from "@pollar/react";
 import { PollarGate } from "../lib/pollar.tsx";
 import { usePollarAuth } from "../hooks/usePollarAuth.ts";
 import { useAccountSetup } from "../hooks/useAccountSetup.tsx";
+import { usePayments } from "../hooks/usePayments.ts";
+import { useProfile } from "../hooks/useProfile.ts";
+import { fromHandle } from "../lib/mappers.ts";
+import { SendPayment } from "./SendPayment";
+import { ReceivePayment } from "./ReceivePayment";
+import { PaymentHistory } from "./PaymentHistory";
+import { WelcomeGift } from "./WelcomeGift";
+import { isApiBackend } from "../lib/backend.ts";
+import "./pagos.css";
 import {
   FRIENDBOT_URL,
+  USDC_CODE,
   USDC_FAUCET_URL,
+  USDC_ISSUER_TESTNET,
   explorerAccountUrl,
 } from "../lib/pollar-config.ts";
 import {
@@ -33,8 +45,14 @@ type Load =
 
 function WalletInner() {
   const { user, isLoading } = usePollarAuth();
+  // Las wallets que crea Pollar (Google/email) las crea y fondea Pollar. Friendbot
+  // crearía la cuenta por fuera y Pollar ya no podría terminar de crearla
+  // (SDK_WALLET_NOT_READY), así que el botón de XLM es solo para Freighter.
+  const custodial = user?.wallet?.custody === "internal";
   const { status: setup } = useAccountSetup();
   const address = user?.address ?? null;
+  const { profile } = useProfile();
+  const pay = usePayments();
 
   const [load, setLoad] = useState<Load>({ step: "loading" });
   const [copied, setCopied] = useState(false);
@@ -134,8 +152,9 @@ function WalletInner() {
         )}
         {load.step === "ready" && !load.balances.exists && (
           <p className="muted" style={{ margin: 0 }}>
-            Tu cuenta todavía no existe en la red de prueba. Si recién entraste, espera unos segundos; si no
-            aparece, pulsa Recargar XLM de prueba.
+            {custodial
+              ? "Pollar está creando tu wallet en la red de prueba. Espera unos segundos y recarga; si no aparece, sal y vuelve a entrar."
+              : "Tu cuenta todavía no existe en la red de prueba. Si recién entraste, espera unos segundos; si no aparece, pulsa Recargar XLM de prueba."}
           </p>
         )}
         {load.step === "ready" && load.balances.exists && (
@@ -145,7 +164,7 @@ function WalletInner() {
             <dt className="muted">USDC</dt>
             <dd style={{ margin: 0 }}>
               {load.balances.usdc === null ? (
-                <span className="muted">sin habilitar todavía</span>
+                <EnableUsdc onDone={() => void refresh()} />
               ) : (
                 formatAmount(load.balances.usdc)
               )}
@@ -160,15 +179,31 @@ function WalletInner() {
         )}
       </div>
 
+      <WelcomeGift onClaimed={() => void refresh()} />
+      {isApiBackend() ? (
+        <SendPayment
+          address={address}
+          balances={load.step === "ready" ? load.balances : null}
+          record={pay.record}
+          onSent={() => void refresh()}
+        />
+      ) : (
+        <p className="card muted">Los pagos necesitan el servidor de Kosmovia (modo api).</p>
+      )}
+      <ReceivePayment username={profile ? fromHandle(profile.username) : null} />
+      {pay.enabled ? <PaymentHistory address={address} payments={pay.payments} loading={pay.loading} error={pay.error} /> : null}
+
       <div className="card" style={{ display: "grid", gap: "0.5rem" }}>
         <h2 style={{ margin: 0, fontSize: "1.1rem" }}>Fondos de prueba</h2>
         <p className="muted" style={{ margin: 0 }}>
           Solo testnet: estos fondos no tienen valor real.
         </p>
         <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-          <button type="button" className="btn btn-primary" onClick={fundXlm} disabled={faucet.busy}>
-            {faucet.busy ? "Pidiendo…" : "Recargar XLM de prueba"}
-          </button>
+          {custodial ? null : (
+            <button type="button" className="btn btn-primary" onClick={fundXlm} disabled={faucet.busy}>
+              {faucet.busy ? "Pidiendo…" : "Recargar XLM de prueba"}
+            </button>
+          )}
           <a className="btn" href={USDC_FAUCET_URL} target="_blank" rel="noreferrer">
             USDC de prueba (faucet.circle.com)
           </a>
@@ -183,5 +218,46 @@ function WalletInner() {
         </p>
       </div>
     </div>
+  );
+}
+
+/**
+ * USDC not enabled yet (no trustline): the account setup only adds the assets
+ * enabled in the Pollar dashboard, so a wallet can end up without it. This
+ * adds the testnet USDC trustline on demand. With Freighter the user signs;
+ * the reserve and fee come from the account's (test) XLM unless Pollar sponsors it.
+ */
+function EnableUsdc({ onDone }: { onDone: () => void }) {
+  const { setTrustline } = usePollar();
+  const [state, setState] = useState<{ busy: boolean; error: string | null }>({ busy: false, error: null });
+
+  async function enable() {
+    setState({ busy: true, error: null });
+    try {
+      const out = await setTrustline({ code: USDC_CODE, issuer: USDC_ISSUER_TESTNET });
+      if (out.status === "error") {
+        setState({ busy: false, error: out.details ?? "No se pudo habilitar USDC. Intenta de nuevo." });
+        return;
+      }
+      setState({ busy: false, error: null });
+      // Horizon can take a moment to show the new trustline.
+      setTimeout(onDone, 2_500);
+    } catch (err) {
+      setState({ busy: false, error: err instanceof Error ? err.message : "No se pudo habilitar USDC." });
+    }
+  }
+
+  return (
+    <span style={{ display: "inline-grid", gap: "0.35rem" }}>
+      <span className="muted">sin habilitar todavía</span>
+      <button type="button" className="btn" onClick={() => void enable()} disabled={state.busy}>
+        {state.busy ? "Habilitando… (confirma en Freighter si te lo pide)" : "Habilitar USDC"}
+      </button>
+      {state.error ? (
+        <span className="error" role="alert">
+          {state.error}
+        </span>
+      ) : null}
+    </span>
   );
 }
