@@ -1,5 +1,16 @@
 import type { AuthorRow, ChannelRow, CommunityRow, ProfileRow } from "../mappers.ts";
-import { canCreateChannel, canPostInChannel, canReadCommunity, roleOf, type ChannelType, type Decision, type Role } from "../authz.ts";
+import {
+  canAssignRole,
+  canCreateChannel,
+  canDeleteChannel,
+  canPostInChannel,
+  canReadCommunity,
+  roleOf,
+  type AssignableRole,
+  type ChannelType,
+  type Decision,
+  type Role,
+} from "../authz.ts";
 import { getPool } from "./pool.ts";
 import * as q from "./sql.ts";
 
@@ -82,6 +93,15 @@ export async function listMyCommunityIds(profileId: string): Promise<string[]> {
 /** The caller becomes owner and #general / #anuncios are created by a trigger. */
 export const createCommunity = (c: q.NewCommunity) => one<CommunityRow>(q.insertCommunity(c));
 
+/** Cambia la foto; null si quien llama no es el dueño. */
+export const setCommunityImage = (slug: string, ownerId: string, image: string | null) =>
+  one<CommunityRow>(q.updateCommunityImage(slug, ownerId, image));
+
+/** Borra la comunidad con todo lo suyo; false si quien llama no es el dueño (o no existe). */
+export async function deleteCommunity(slug: string, ownerId: string): Promise<boolean> {
+  return (await one(q.deleteCommunity(slug, ownerId))) !== null;
+}
+
 /** Joins as 'member' (never a higher role). Joining twice is fine. */
 export async function joinCommunity(communityId: string, profileId: string): Promise<void> {
   await run(q.joinCommunity(communityId, profileId));
@@ -96,11 +116,30 @@ export type MemberWithProfile = { role: string; joined_at: string; profile: Prof
 
 export type Guarded<T> = { ok: true; value: T } | { ok: false; denied: Extract<Decision, { allowed: false }> };
 
+const FORBIDDEN: Extract<Decision, { allowed: false }> = { allowed: false, status: 403, code: "forbidden", error: "No permitido." };
+
 /** Members of a community, for its members only. */
 export async function listMembers(communityId: string, profileId: string): Promise<Guarded<MemberWithProfile[]>> {
   const decision = canReadCommunity(await getRole(communityId, profileId));
   if (!decision.allowed) return { ok: false, denied: decision };
   return { ok: true, value: await run<MemberWithProfile>(q.listMembers(communityId)) };
+}
+
+/**
+ * Cambia el rol de `targetId`. Se revisa la regla pura (para responder con el
+ * motivo) y otra vez dentro del UPDATE (por si el rol cambia entre las dos).
+ */
+export async function setMemberRole(
+  communityId: string,
+  actorId: string,
+  targetId: string,
+  newRole: AssignableRole,
+): Promise<Guarded<MemberWithProfile>> {
+  const [actorRole, targetRole] = await Promise.all([getRole(communityId, actorId), getRole(communityId, targetId)]);
+  const decision = canAssignRole(actorRole, targetRole, newRole);
+  if (!decision.allowed) return { ok: false, denied: decision };
+  const row = await one<MemberWithProfile>(q.setMemberRole(communityId, targetId, newRole, actorId));
+  return row ? { ok: true, value: row } : { ok: false, denied: FORBIDDEN };
 }
 
 // ----------------------------------------------------------------- channels
@@ -124,6 +163,16 @@ export async function createChannel(
   return row ? { ok: true, value: row } : { ok: false, denied: { allowed: false, status: 403, code: "forbidden", error: "No permitido." } };
 }
 
+/** Borra un canal y sus mensajes: owner/admin, nunca #general. */
+export async function deleteChannel(channelId: string, profileId: string): Promise<Guarded<true> | { ok: false; notFound: true }> {
+  const access = await getChannelAccess(channelId, profileId);
+  if (!access.found) return { ok: false, notFound: true };
+  const decision = canDeleteChannel(access.role, access.name);
+  if (!decision.allowed) return { ok: false, denied: decision };
+  const row = await one(q.deleteChannel(channelId, profileId));
+  return row ? { ok: true, value: true } : { ok: false, denied: FORBIDDEN };
+}
+
 // ----------------------------------------------------------------- messages
 
 export type MessageWire = {
@@ -137,14 +186,15 @@ export type MessageWire = {
 
 export type ChannelAccess =
   | { found: false }
-  | { found: true; communityId: string; type: ChannelType; role: Role };
+  | { found: true; communityId: string; name: string; type: ChannelType; role: Role };
 
 export async function getChannelAccess(channelId: string, profileId: string): Promise<ChannelAccess> {
-  const row = await one<{ community_id: string; type: string; role: string | null }>(q.channelWithRole(channelId, profileId));
+  const row = await one<{ community_id: string; name: string; type: string; role: string | null }>(q.channelWithRole(channelId, profileId));
   if (!row) return { found: false };
   return {
     found: true,
     communityId: row.community_id,
+    name: row.name,
     type: row.type === "announcement" ? "announcement" : "text",
     role: roleOf(row.role),
   };

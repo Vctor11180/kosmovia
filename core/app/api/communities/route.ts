@@ -36,7 +36,7 @@ export async function POST(request: Request): Promise<Response> {
   const limited = limitedResponse("communityCreate", auth.session.profileId);
   if (limited) return limited;
 
-  const body = await readJsonBody(request);
+  const body = await readJsonBody(request, 100_000);
   if (!body.ok) return body.response;
   const input = parseCommunityCreate(body.value);
   if (!input.ok) return failure(400, input.error, "invalid_input");

@@ -1,5 +1,6 @@
 # app · dApp de Kosmovia
 
-Dueño: Victor. La aplicación: login, comunidades, canales, chat y wallet. Solo modo oscuro, con la paleta de AGENTS.md.
+Dueño: Victor. La aplicación: comunidades, canales, chat, wallet y liquidaciones B2B.
+Next.js (App Router). `npm install` y `npm run dev` para trabajar.
 
-Victor: sube aquí tu frontend en una rama propia y abre un Pull Request. Si tu landing reemplaza la de web/, hazlo en el mismo PR o en otro.
+Soporte completo para tema oscuro y claro (turquesa + slate/dark), servicios desacoplados y suscripciones en tiempo real.

@@ -17,7 +17,7 @@ export interface Query {
 
 const PROFILE_COLUMNS =
   "p.id, p.wallet, p.username, p.display_name, p.avatar_seed, p.avatar_style, p.bio, p.trust_level, p.x_handle, p.x_verified_at, p.created_at, p.username_changed_at, p.avatar_changed_at";
-const COMMUNITY_COLUMNS = "c.id, c.slug, c.name, c.icon, c.description, c.owner_id, c.created_at";
+const COMMUNITY_COLUMNS = "c.id, c.slug, c.name, c.icon, c.description, c.owner_id, c.created_at, c.image";
 const CHANNEL_COLUMNS = "ch.id, ch.community_id, ch.name, ch.topic, ch.type";
 
 /** ISO-8601 with microseconds, so ordering by the string equals ordering by the column. */
@@ -152,14 +152,24 @@ export interface NewCommunity {
   description: string;
   icon: string;
   ownerId: string;
+  /** data URL ya validada (lib/community-image.ts), o null. */
+  image: string | null;
 }
 
 /** The AFTER INSERT trigger adds the owner as a member and creates #general and #anuncios. */
 export const insertCommunity = (c: NewCommunity): Query => ({
   text:
-    "insert into public.communities (name, slug, description, icon, owner_id) values ($1, $2, $3, $4, $5) " +
-    "returning id, slug, name, icon, description, owner_id, created_at",
-  values: [c.name, c.slug, c.description, c.icon, c.ownerId],
+    "insert into public.communities (name, slug, description, icon, owner_id, image) values ($1, $2, $3, $4, $5, $6) " +
+    "returning id, slug, name, icon, description, owner_id, created_at, image",
+  values: [c.name, c.slug, c.description, c.icon, c.ownerId, c.image],
+});
+
+/** Solo el dueño: la condición owner_id = sesión va en el WHERE. Cero filas = no es el dueño (o no existe). */
+export const updateCommunityImage = (slug: string, ownerId: string, image: string | null): Query => ({
+  text:
+    "update public.communities set image = $3 where slug = $1 and owner_id = $2 " +
+    "returning id, slug, name, icon, description, owner_id, created_at, image",
+  values: [slug, ownerId, image],
 });
 
 /** Always as 'member'; joining twice is not an error. */
@@ -186,6 +196,35 @@ export const listMembers = (communityId: string): Query => ({
   values: [communityId],
 });
 
+/** Solo el dueño: el WHERE exige owner_id = sesión. Borra en cascada miembros, canales y mensajes. Cero filas = no es el dueño (o no existe). */
+export const deleteCommunity = (slug: string, ownerId: string): Query => ({
+  text: "delete from public.communities where slug = $1 and owner_id = $2 returning id",
+  values: [slug, ownerId],
+});
+
+/**
+ * Cambia el rol de un miembro, con la autorización dentro del propio UPDATE
+ * (las mismas reglas de canAssignRole): el objetivo nunca es owner; quien actúa
+ * es owner de la comunidad, o admin que asigna moderator/member a quien hoy es
+ * moderator/member. Devuelve el miembro con su perfil; cero filas = no permitido
+ * (o el miembro no existe). $3 = rol nuevo, $4 = quien actúa.
+ */
+export const setMemberRole = (communityId: string, targetId: string, newRole: string, actorId: string): Query => ({
+  text:
+    "with upd as (" +
+    "update public.members t set role = $3 " +
+    "where t.community_id = $1 and t.profile_id = $2 and t.role <> 'owner' and $3 in ('admin', 'moderator', 'member') " +
+    "and exists (select 1 from public.members a where a.community_id = $1 and a.profile_id = $4::uuid and (" +
+    "a.role = 'owner' or (a.role = 'admin' and $3 in ('moderator', 'member') and t.role in ('moderator', 'member')))) " +
+    "returning t.role, t.joined_at, t.profile_id) " +
+    "select u.role, u.joined_at, " +
+    "json_build_object('id', p.id, 'wallet', p.wallet, 'username', p.username, 'display_name', p.display_name, " +
+    "'avatar_seed', p.avatar_seed, 'avatar_style', p.avatar_style, 'bio', p.bio, 'trust_level', p.trust_level, " +
+    "'x_handle', p.x_handle) as profile " +
+    "from upd u join public.profiles p on p.id = u.profile_id",
+  values: [communityId, targetId, newRole, actorId],
+});
+
 // ----------------------------------------------------------------- channels
 
 export const listChannels = (communityId: string): Query => ({
@@ -207,10 +246,22 @@ export const insertChannel = (c: NewChannel): Query => ({
   values: [c.communityId, c.name, c.topic, c.type],
 });
 
+/**
+ * Borra un canal (y sus mensajes, en cascada) solo si quien llama es owner o admin
+ * de su comunidad y no es #general. Cero filas = no permitido (o no existe).
+ */
+export const deleteChannel = (channelId: string, profileId: string): Query => ({
+  text:
+    "delete from public.channels ch where ch.id = $1 and ch.name <> 'general' " +
+    "and exists (select 1 from public.members m where m.community_id = ch.community_id and m.profile_id = $2::uuid " +
+    "and m.role in ('owner', 'admin')) returning ch.id",
+  values: [channelId, profileId],
+});
+
 /** The channel plus the caller's role in its community (null when not a member), in one round trip. */
 export const channelWithRole = (channelId: string, profileId: string): Query => ({
   text:
-    "select ch.id, ch.community_id, ch.type, m.role " +
+    "select ch.id, ch.community_id, ch.name, ch.type, m.role " +
     "from public.channels ch " +
     "left join public.members m on m.community_id = ch.community_id and m.profile_id = $2 " +
     "where ch.id = $1",
