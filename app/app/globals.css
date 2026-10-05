@@ -2824,3 +2824,35 @@ html, body {
 /* El marco del perfil (más grande) se apoya sobre el banner sin tapar el formulario */
 .profile-banner:has(.kv-frame) { height: 72px; margin-bottom: 88px; }
 .profile-banner .kv-frame { position: absolute; left: 50%; bottom: -78px; margin: 0; transform: translateX(-50%); }
+
+/* ==========================================================================
+   Kosmovia · roles y configuración de la comunidad
+   ========================================================================== */
+
+/* Insignias de rol dentro de la paleta (el rojo queda solo para borrar) */
+.role-badge.owner { background: var(--accent); color: var(--bg); }
+.role-badge.admin { background: var(--accent-glow); color: var(--accent); }
+.role-badge.moderator { background: rgba(94, 234, 212, 0.12); color: var(--accent-hover); border: 1px solid var(--accent-glow); }
+
+/* Listas de Configuración (roles y canales) */
+.kv-settings-list { display: grid; gap: 4px; max-height: 320px; overflow-y: auto; }
+.kv-settings-row {
+  display: flex; align-items: center; gap: 10px; padding: 8px 10px;
+  border: 1px solid var(--line); border-radius: 10px; background: var(--surface-alt);
+}
+.kv-settings-row-text { display: grid; gap: 2px; min-width: 0; flex: 1; }
+.kv-settings-row-text .member-name, .kv-settings-row-text .member-tag { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.kv-role-select { width: auto; min-width: 128px; min-height: 36px; }
+
+/* Acciones que borran */
+.kv-danger-btn {
+  min-height: 36px; padding: 6px 12px; border-radius: 8px; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer;
+  background: #ef4444; color: #fff; border: 1px solid #ef4444;
+}
+.kv-danger-btn.ghost { background: transparent; color: #f87171; border-color: rgba(239, 68, 68, 0.45); }
+.kv-danger-btn:hover:not(:disabled) { filter: brightness(1.08); }
+.kv-danger-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.kv-danger-zone {
+  display: grid; gap: 10px; padding: 14px; border-radius: 12px;
+  border: 1px solid rgba(239, 68, 68, 0.45); background: rgba(239, 68, 68, 0.06);
+}

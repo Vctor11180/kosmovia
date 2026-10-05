@@ -48,9 +48,9 @@ export function MemberList({ members, isOpen, onOpenProfile }: MemberListProps) 
             <div className="member-details">
               <div className="member-name-row">
                 <span className="member-name">{member.displayName}</span>
-                {member.role && (
+                {member.role && member.role !== 'member' && (
                   <span className={`role-badge ${member.role}`}>
-                    {member.role}
+                    {{ owner: 'dueño', admin: 'admin', moderator: 'moderador', builder: 'builder' }[member.role] ?? member.role}
                   </span>
                 )}
               </div>

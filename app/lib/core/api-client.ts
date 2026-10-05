@@ -15,7 +15,7 @@ export type ApiResult<T> =
   | { ok: false; status: number; error: string; code?: string };
 
 export interface ApiInit {
-  method?: "GET" | "POST" | "PATCH";
+  method?: "GET" | "POST" | "PATCH" | "DELETE";
   body?: unknown;
 }
 

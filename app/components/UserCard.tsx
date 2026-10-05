@@ -10,7 +10,7 @@ interface UserCardProps {
   /** A quién se tocó (lo que ya se sabe: nombre, @usuario, avatar). */
   user: User | null;
   /** Su rol en la comunidad activa, si es miembro. */
-  role?: 'admin' | 'builder' | 'member';
+  role?: User['role'];
   isSelf: boolean;
   onClose: () => void;
   onTransfer: (username: string) => void;
@@ -22,6 +22,8 @@ const LEVELS: Record<0 | 1 | 2, string> = {
   1: 'Nivel 1 · Cuenta social verificada',
   2: 'Nivel 2 · Empresa verificada',
 };
+
+const ROLE_LABEL: Record<string, string> = { owner: 'Dueño', admin: 'Admin', moderator: 'Moderador', member: 'Miembro', builder: 'Builder' };
 
 const desde = (iso?: string) =>
   iso ? new Date(iso).toLocaleDateString('es-BO', { month: 'long', year: 'numeric' }) : null;
@@ -95,7 +97,7 @@ export function UserCard({ user, role, isSelf, onClose, onTransfer, onEditProfil
 
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'center', marginBottom: 12 }}>
             {u.trustLevel !== undefined ? <span className="kyc-level-tag">{LEVELS[u.trustLevel]}</span> : null}
-            {role ? <span className={`role-badge ${role}`}>{role === 'admin' ? 'admin' : role}</span> : null}
+            {role ? <span className={`role-badge ${role}`}>{ROLE_LABEL[role] ?? role}</span> : null}
             {u.xHandle ? <span className="kyc-level-tag">𝕏 @{u.xHandle}</span> : null}
           </div>
 

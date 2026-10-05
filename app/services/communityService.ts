@@ -1,4 +1,4 @@
-import { Channel, Community } from '../types';
+import { Channel, Community, User } from '../types';
 import { INITIAL_COMMUNITIES } from './mockData';
 import { storage } from './storage';
 
@@ -26,6 +26,12 @@ export interface ICommunityService {
   updateImage(communityId: string, image: string | null): Promise<Community>;
   /** Unirse por el link de invitación (/plataforma?c=<slug>). */
   joinBySlug?(slug: string): Promise<void>;
+  /** Dueño (cualquier rol salvo dueño) o admin (moderador/miembro). Devuelve el miembro actualizado. */
+  setMemberRole?(communityId: string, profileId: string, role: 'admin' | 'moderator' | 'member'): Promise<User>;
+  /** Dueño o admin; #general no se borra. */
+  deleteChannel?(communityId: string, channelId: string): Promise<void>;
+  /** Solo el dueño. Borra canales y mensajes. */
+  deleteCommunity?(communityId: string): Promise<void>;
 }
 
 const STORAGE_KEY = 'kosmovia_communities';

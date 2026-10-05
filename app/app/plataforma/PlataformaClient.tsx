@@ -355,6 +355,62 @@ export function PlataformaPage() {
     }
   };
 
+  const handleChangeRole = async (profileId: string, role: 'admin' | 'moderator' | 'member'): Promise<boolean> => {
+    if (!communityService.setMemberRole) return false;
+    try {
+      const updated = await communityService.setMemberRole(activeCommunity.id, profileId, role);
+      setCommunities((prev) =>
+        prev.map((c) =>
+          c.id === activeCommunity.id
+            ? { ...c, members: c.members.map((m) => (m.id === profileId ? { ...m, role: updated.role } : m)) }
+            : c
+        )
+      );
+      setPayNotice({ kind: 'ok', text: `${updated.username} ahora es ${role === 'admin' ? 'admin' : role === 'moderator' ? 'moderador' : 'miembro'}.` });
+      return true;
+    } catch (err) {
+      setPayNotice({ kind: 'error', text: errorText(err, 'No se pudo cambiar el rol.') });
+      return false;
+    }
+  };
+
+  const handleDeleteChannel = async (channelId: string): Promise<boolean> => {
+    if (!communityService.deleteChannel) return false;
+    try {
+      await communityService.deleteChannel(activeCommunity.id, channelId);
+      const remaining = activeCommunity.channels.filter((ch) => ch.id !== channelId);
+      setCommunities((prev) => prev.map((c) => (c.id === activeCommunity.id ? { ...c, channels: remaining } : c)));
+      if (activeChannelId === channelId && remaining.length > 0) setActiveChannelId(remaining[0].id);
+      setPayNotice({ kind: 'ok', text: 'Canal borrado.' });
+      return true;
+    } catch (err) {
+      setPayNotice({ kind: 'error', text: errorText(err, 'No se pudo borrar el canal.') });
+      return false;
+    }
+  };
+
+  const handleDeleteCommunity = async (): Promise<boolean> => {
+    if (!communityService.deleteCommunity) return false;
+    const gone = activeCommunity;
+    try {
+      await communityService.deleteCommunity(gone.id);
+      const rest = communities.filter((c) => c.id !== gone.id);
+      if (rest.length === 0) {
+        // Sin comunidades la UI no tiene qué mostrar: se recarga y el servicio te une a otra o crea "Kosmovia".
+        window.location.reload();
+        return true;
+      }
+      setCommunities(rest);
+      setActiveCommunityId(rest[0].id);
+      if (rest[0].channels.length > 0) setActiveChannelId(rest[0].channels[0].id);
+      setPayNotice({ kind: 'ok', text: `${gone.name} fue borrada.` });
+      return true;
+    } catch (err) {
+      setPayNotice({ kind: 'error', text: errorText(err, 'No se pudo borrar la comunidad.') });
+      return false;
+    }
+  };
+
   const handleCreateInvoice = (amount: number, concept: string) => {
     const payload = JSON.stringify({ amount, concept });
     handleSendMessage(`[COBRO_B2B:${payload}]`);
@@ -452,8 +508,9 @@ export function PlataformaPage() {
     m.id === currentUser.id ? { ...m, ...currentUser, role: m.role ?? currentUser.role } : m
   );
 
-  const isCommunityOwner =
-    SERVICES_MODE !== 'api' || currentMembers.find((m) => m.id === currentUser.id)?.role === 'admin';
+  const myCommunityRole = currentMembers.find((m) => m.id === currentUser.id)?.role;
+  // Configurar: dueño o admin (en modo demo, todos).
+  const isCommunityOwner = SERVICES_MODE !== 'api' || myCommunityRole === 'owner' || myCommunityRole === 'admin';
 
   if (!ready) {
     return (
@@ -582,7 +639,12 @@ export function PlataformaPage() {
         community={activeCommunity}
         isOpen={isCommunitySettingsOpen}
         onClose={() => setIsCommunitySettingsOpen(false)}
+        myRole={SERVICES_MODE !== 'api' ? 'owner' : myCommunityRole}
+        currentUserId={currentUser.id}
         onSaveImage={handleSaveCommunityImage}
+        onChangeRole={handleChangeRole}
+        onDeleteChannel={handleDeleteChannel}
+        onDeleteCommunity={handleDeleteCommunity}
       />
 
       <QuickInvoiceModal

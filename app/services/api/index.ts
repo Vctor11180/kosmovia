@@ -92,7 +92,10 @@ function toUser(
     username: `@${p.username}`,
     displayName: p.display_name || p.username,
     avatar: avatarUri(p.avatar_seed, p.avatar_style, p.id),
-    role: opts.role === undefined ? undefined : opts.role === 'owner' || opts.role === 'admin' ? 'admin' : 'member',
+    role:
+      opts.role === 'owner' || opts.role === 'admin' || opts.role === 'moderator' || opts.role === 'member'
+        ? opts.role
+        : undefined,
     isOnline: opts.online ?? false,
     bio: p.bio ?? undefined,
     wallet: p.wallet,
@@ -225,6 +228,26 @@ export class ApiCommunityService implements ICommunityService {
       body: { name: input.name, slug: input.slug, description: input.description, icon: input.icon, image: input.image ?? null },
     });
     return this.detail(community);
+  }
+
+  async setMemberRole(communityId: string, profileId: string, role: 'admin' | 'moderator' | 'member'): Promise<User> {
+    const slug = this.slugs.get(communityId);
+    if (!slug) throw new ApiError('Comunidad desconocida.');
+    const { member } = await call<{ member: MemberRow }>(
+      `/api/communities/${encodeURIComponent(slug)}/members/${encodeURIComponent(profileId)}`,
+      { method: 'PATCH', body: { role } },
+    );
+    return toUser(member.profile, { role: member.role });
+  }
+
+  async deleteChannel(_communityId: string, channelId: string): Promise<void> {
+    await call(`/api/channels/${encodeURIComponent(channelId)}`, { method: 'DELETE' });
+  }
+
+  async deleteCommunity(communityId: string): Promise<void> {
+    const slug = this.slugs.get(communityId);
+    if (!slug) throw new ApiError('Comunidad desconocida.');
+    await call(`/api/communities/${encodeURIComponent(slug)}`, { method: 'DELETE' });
   }
 
   async joinBySlug(slug: string): Promise<void> {

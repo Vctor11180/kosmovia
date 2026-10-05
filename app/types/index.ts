@@ -3,7 +3,8 @@ export interface User {
   username: string; // e.g. "@victor"
   displayName: string;
   avatar?: string;
-  role?: 'admin' | 'builder' | 'member';
+  /** owner/admin/moderator/member vienen de core; builder es de los datos de ejemplo. */
+  role?: 'owner' | 'admin' | 'moderator' | 'builder' | 'member';
   isOnline?: boolean;
   bio?: string;
   statusText?: string;
