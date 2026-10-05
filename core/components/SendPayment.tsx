@@ -111,21 +111,26 @@ export function SendPayment({ address, balances, record, onSent, preset }: SendP
     const parsed = normalizeRecipient(to);
     if (!to.trim()) return setLookup({ step: "idle" });
     if (!parsed) return setLookup({ step: "error", message: "Escribe un @usuario o una dirección G… de Stellar." });
-    if (parsed.kind === "address") {
-      return setLookup(
-        parsed.wallet === address
-          ? { step: "error", message: "Esa es tu propia wallet." }
-          : { step: "found", recipient: { kind: "address", wallet: parsed.wallet } },
-      );
+    if (parsed.kind === "address" && parsed.wallet === address) {
+      return setLookup({ step: "error", message: "Esa es tu propia wallet." });
+    }
+    if (parsed.kind === "address" && !isApiBackend()) {
+      return setLookup({ step: "found", recipient: { kind: "address", wallet: parsed.wallet } });
     }
     if (!isApiBackend()) return setLookup({ step: "error", message: "Buscar por @usuario necesita el servidor de Kosmovia." });
     setLookup({ step: "searching" });
     let cancelled = false;
     const timer = setTimeout(async () => {
-      const res = await apiRequest<{ profile: ProfileRow }>(`/api/profiles/${encodeURIComponent(parsed.username)}`);
+      // Una dirección G... también se busca: si es de alguien de Kosmovia, se ve quién es.
+      const key = parsed.kind === "address" ? parsed.wallet : parsed.username;
+      const res = await apiRequest<{ profile: ProfileRow }>(`/api/profiles/${encodeURIComponent(key)}`);
       if (cancelled) return;
+      if (!res.ok && parsed.kind === "address") {
+        setLookup({ step: "found", recipient: { kind: "address", wallet: parsed.wallet } });
+        return;
+      }
       if (!res.ok) {
-        setLookup({ step: "error", message: res.status === 404 ? `No existe @${parsed.username}.` : res.error });
+        setLookup({ step: "error", message: res.status === 404 ? `No existe @${key}.` : res.error });
         return;
       }
       const p = res.data.profile;

@@ -208,6 +208,17 @@ export function cleanSlugParam(raw: string): string | null {
   return slugError(s) === null ? s : null;
 }
 
+/** A G-address in a route param (upper case), or null. */
+export function cleanWalletParam(raw: string): string | null {
+  let decoded: string;
+  try {
+    decoded = decodeURIComponent(raw).trim().toUpperCase();
+  } catch {
+    return null;
+  }
+  return /^G[A-Z2-7]{55}$/.test(decoded) ? decoded : null;
+}
+
 export function cleanUsernameParam(raw: string): string | null {
   let decoded: string;
   try {

@@ -204,6 +204,12 @@ test("las consultas de pagos van parametrizadas", () => {
   }
 });
 
+test("buscar un perfil por wallet va parametrizado", () => {
+  const query = q.profileByWallet("x'; drop table profiles; --");
+  assert.match(query.text, /where p\.wallet = \$1/);
+  assert.ok(!query.text.includes("drop table"));
+});
+
 test("0004_pagos.sql: un pago por operación y CHECKs de formato", () => {
   const sql = readFileSync(new URL("../db/migrations/0004_pagos.sql", import.meta.url), "utf8");
   assert.match(sql, /constraint payments_op_id_key unique \(op_id\)/);

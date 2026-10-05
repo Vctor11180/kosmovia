@@ -36,6 +36,7 @@ async function one<T = Record<string, unknown>>(query: q.Query | null): Promise<
 
 export const getProfileById = (id: string) => one<ProfileRow>(q.profileById(id));
 export const getProfileByUsername = (username: string) => one<ProfileRow>(q.profileByUsername(username));
+export const getProfileByWallet = (wallet: string) => one<ProfileRow>(q.profileByWallet(wallet));
 
 export async function takenUsernames(names: string[]): Promise<Set<string>> {
   if (names.length === 0) return new Set();
