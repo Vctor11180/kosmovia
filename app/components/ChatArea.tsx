@@ -368,7 +368,7 @@ export function ChatArea({
                     aria-label={`Ver perfil de ${msg.author.username}`}
                     style={{ ...{ background: 'none', border: 0, padding: 0, cursor: 'pointer', fontFamily: 'inherit' }, width: '100%', height: '100%', borderRadius: 'inherit', color: 'inherit' }}
                   >
-                    <AvatarFace avatar={msg.author.avatar} name={msg.author.displayName} />
+                    <AvatarFace avatar={msg.author.avatar} name={msg.author.displayName} seed={msg.author.username || msg.author.id} />
                   </button>
                 </div>
                 )}

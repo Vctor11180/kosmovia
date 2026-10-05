@@ -78,7 +78,7 @@ export function ChannelList({
         title="Ver y editar mi perfil"
       >
         <div className="user-avatar-badge">
-          <AvatarFace avatar={currentUser.avatar} name={currentUser.displayName} />
+          <AvatarFace avatar={currentUser.avatar} name={currentUser.displayName} seed={currentUser.username || currentUser.id} />
           <span className="status-dot" />
         </div>
         <div className="user-info">

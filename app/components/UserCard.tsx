@@ -91,7 +91,7 @@ export function UserCard({ user, role, isSelf, onClose, onTransfer, onEditProfil
         <div className="modal-body">
           <div className="profile-banner">
             <KosmoFrame size={116}>
-              <AvatarFace avatar={u.avatar} name={u.displayName} />
+              <AvatarFace avatar={u.avatar} name={u.displayName} seed={u.username || u.id} />
             </KosmoFrame>
           </div>
 

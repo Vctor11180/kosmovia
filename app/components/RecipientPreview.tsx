@@ -57,7 +57,7 @@ export function RecipientPreview({ value, selfWallet }: { value: string; selfWal
     <div className="member-item" aria-live="polite" style={{ marginTop: 6 }}>
       <div className="member-avatar-wrapper">
         <div className="member-avatar">
-          <AvatarFace avatar={user.avatar} name={user.displayName} />
+          <AvatarFace avatar={user.avatar} name={user.displayName} seed={user.username} />
         </div>
       </div>
       <div className="member-details">

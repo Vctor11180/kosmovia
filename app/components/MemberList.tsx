@@ -41,7 +41,7 @@ export function MemberList({ members, isOpen, onOpenProfile }: MemberListProps) 
           <div key={member.id} className="member-item" {...open(member)}>
             <div className="member-avatar-wrapper">
               <div className="member-avatar">
-                <AvatarFace avatar={member.avatar} name={member.displayName} />
+                <AvatarFace avatar={member.avatar} name={member.displayName} seed={member.username || member.id} />
               </div>
               <span className="member-status-dot online" />
             </div>
@@ -70,7 +70,7 @@ export function MemberList({ members, isOpen, onOpenProfile }: MemberListProps) 
               <div key={member.id} className="member-item offline" {...open(member)}>
                 <div className="member-avatar-wrapper">
                   <div className="member-avatar">
-                    <AvatarFace avatar={member.avatar} name={member.displayName} />
+                    <AvatarFace avatar={member.avatar} name={member.displayName} seed={member.username || member.id} />
                   </div>
                   <span className="member-status-dot offline" />
                 </div>

@@ -102,7 +102,7 @@ export function ProfileModal({
           <form onSubmit={handleSubmit} className="modal-body">
             <div className="profile-banner">
               <KosmoFrame size={132} badge={<span className="profile-online-badge" />}>
-                <AvatarFace avatar={user.avatar} name={displayName} />
+                <AvatarFace avatar={user.avatar} name={displayName} seed={user.username || user.id} />
               </KosmoFrame>
             </div>
 
