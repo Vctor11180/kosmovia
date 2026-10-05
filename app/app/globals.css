@@ -3074,3 +3074,102 @@ html, body {
   image-rendering: -moz-crisp-edges;
 }
 
+/* ==============================================================================
+   Stellar Pulse (Badge de Red On-Chain en el Header)
+   ============================================================================== */
+.stellar-network-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(45, 212, 191, 0.08);
+  border: 1px solid rgba(45, 212, 191, 0.28);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: 0.02em;
+  margin-left: 12px;
+  user-select: none;
+  box-shadow: 0 0 12px rgba(45, 212, 191, 0.08);
+  transition: all 0.2s ease;
+}
+
+[data-theme="light"] .stellar-network-badge {
+  background: rgba(15, 143, 132, 0.08);
+  border-color: rgba(15, 143, 132, 0.26);
+  color: #0f8f84;
+}
+
+.stellar-live-pulse {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #2dd4bf;
+  box-shadow: 0 0 8px #5eead4;
+  animation: dotPulse 1.8s infinite ease-in-out;
+}
+
+/* ==============================================================================
+   Tarjeta Holográfica 3D de Usuario (UserCard ID)
+   ============================================================================== */
+.kv-hologram-card {
+  position: relative;
+  overflow: hidden;
+  transform-style: preserve-3d;
+  will-change: transform;
+  border: 1px solid rgba(45, 212, 191, 0.35) !important;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6), 0 0 28px rgba(45, 212, 191, 0.12) !important;
+}
+
+.card-hologram-sheen {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  transition: opacity 0.2s ease;
+  border-radius: inherit;
+}
+
+.kosmo-id-badge {
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: rgba(45, 212, 191, 0.15);
+  color: #5eead4;
+  border: 1px solid rgba(45, 212, 191, 0.3);
+}
+
+.creator-vip-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.18) 0%, rgba(45, 212, 191, 0.2) 100%);
+  border: 1px solid rgba(245, 158, 11, 0.5);
+  color: #fcd34d;
+  text-shadow: 0 0 8px rgba(245, 158, 11, 0.3);
+  box-shadow: 0 0 14px rgba(245, 158, 11, 0.15);
+}
+
+.btn-tip-usdc {
+  background: linear-gradient(135deg, #14b8a6 0%, #2dd4bf 100%) !important;
+  color: #061314 !important;
+  font-weight: 800 !important;
+  box-shadow: 0 0 18px rgba(45, 212, 191, 0.35) !important;
+  transition: all 0.2s ease !important;
+}
+
+.btn-tip-usdc:hover {
+  filter: brightness(1.12);
+  transform: translateY(-1px);
+  box-shadow: 0 0 24px rgba(45, 212, 191, 0.5) !important;
+}
+

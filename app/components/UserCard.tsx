@@ -75,12 +75,52 @@ export function UserCard({ user, role, isSelf, onClose, onTransfer, onEditProfil
     }
   };
 
+  const [tilt, setTilt] = useState<{ x: number; y: number; sheenX: number; sheenY: number }>({
+    x: 0,
+    y: 0,
+    sheenX: 50,
+    sheenY: 50,
+  });
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width;
+    const y = (e.clientY - rect.top) / rect.height;
+    const tiltX = (0.5 - y) * 14;
+    const tiltY = (x - 0.5) * 14;
+    setTilt({ x: tiltX, y: tiltY, sheenX: x * 100, sheenY: y * 100 });
+  };
+
+  const handleMouseLeave = () => {
+    setTilt({ x: 0, y: 0, sheenX: 50, sheenY: 50 });
+  };
+
   return (
     <div className="modal-backdrop" onClick={onClose} role="dialog" aria-modal="true" aria-label={`Perfil de ${u.username}`}>
-      <div className="modal-card profile-settings-card" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="modal-card profile-settings-card kv-hologram-card"
+        onClick={(e) => e.stopPropagation()}
+        onMouseMove={handleMouseMove}
+        onMouseLeave={handleMouseLeave}
+        style={{
+          transform: `perspective(1000px) rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)`,
+          transition: 'transform 0.1s ease-out',
+        }}
+      >
+        <div
+          className="card-hologram-sheen"
+          aria-hidden="true"
+          style={{
+            background: `radial-gradient(circle at ${tilt.sheenX}% ${tilt.sheenY}%, rgba(94, 234, 212, 0.22) 0%, rgba(45, 212, 191, 0.08) 40%, transparent 70%)`,
+          }}
+        />
+
         <header className="modal-header">
           <div className="settings-header-title">
-            <h3 className="modal-title">{u.displayName}</h3>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <h3 className="modal-title">{u.displayName}</h3>
+              <span className="kosmo-id-badge">ID KOSMONAUTA</span>
+            </div>
             <span className="user-tag">{u.username}</span>
           </div>
           <button type="button" className="modal-close-btn" onClick={onClose} aria-label="Cerrar perfil">
@@ -96,6 +136,7 @@ export function UserCard({ user, role, isSelf, onClose, onTransfer, onEditProfil
           </div>
 
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'center', marginBottom: 12 }}>
+            <span className="creator-vip-badge">✦ Creador Kosmovia · Stellar VIP ✦</span>
             {u.trustLevel !== undefined ? <span className="kyc-level-tag">{LEVELS[u.trustLevel]}</span> : null}
             {role ? <span className={`role-badge ${role}`}>{ROLE_LABEL[role] ?? role}</span> : null}
             {u.xHandle ? <span className="kyc-level-tag">𝕏 @{u.xHandle}</span> : null}
@@ -126,8 +167,8 @@ export function UserCard({ user, role, isSelf, onClose, onTransfer, onEditProfil
                 Editar perfil
               </button>
             ) : (
-              <button type="button" className="btn-primary" onClick={() => onTransfer(u.username)}>
-                💸 Transferir
+              <button type="button" className="btn-primary btn-tip-usdc" onClick={() => onTransfer(u.username)}>
+                ⚡ Enviar Propina USDC
               </button>
             )}
           </div>

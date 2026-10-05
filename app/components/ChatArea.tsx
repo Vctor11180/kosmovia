@@ -249,6 +249,10 @@ export function ChatArea({
               {channel.topic}
             </span>
           )}
+          <div className="stellar-network-badge" title="Conectado a Stellar Horizon Testnet (Pollar Relayer)">
+            <span className="stellar-live-pulse" />
+            <span className="stellar-badge-text">Stellar Testnet</span>
+          </div>
         </div>
         <div className="chat-header-actions">
           {notifications && onToggleNotifications && (
