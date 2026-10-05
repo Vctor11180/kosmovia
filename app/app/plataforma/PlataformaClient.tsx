@@ -11,6 +11,7 @@ import { WalletDrawer } from '../../components/WalletDrawer';
 import { CreateChannelModal } from '../../components/CreateChannelModal';
 import { QuickInvoiceModal } from '../../components/QuickInvoiceModal';
 import { UserCard } from '../../components/UserCard';
+import { NotificationsPanel } from '../../components/NotificationsPanel';
 import { CreateCommunityModal } from '../../components/CreateCommunityModal';
 import { CommunitySettingsModal } from '../../components/CommunitySettingsModal';
 import { Channel, Community, Message, SettlementRecord, User, WalletTransaction } from '../../types';
@@ -35,7 +36,11 @@ export function PlataformaPage() {
   const [activeChannelId, setActiveChannelId] = useState<string>('chan-1');
   const [messagesByChannel, setMessagesByChannel] = useState<Record<string, Message[]>>(INITIAL_MESSAGES);
   const [isMobileOpen, setIsMobileOpen] = useState<boolean>(false);
-  const [isMemberListOpen, setIsMemberListOpen] = useState<boolean>(true);
+  // Panel derecho: Miembros, Mi Wallet o Notificaciones, uno a la vez y fijo (no tapa el chat).
+  const [rightPanel, setRightPanel] = useState<'members' | 'wallet' | 'notifications' | null>('members');
+  const togglePanel = (panel: 'members' | 'wallet' | 'notifications') =>
+    setRightPanel((prev) => (prev === panel ? null : panel));
+  const isMemberListOpen = rightPanel === 'members';
   const [isProfileModalOpen, setIsProfileModalOpen] = useState<boolean>(false);
 
   // Tema Claro / Oscuro (Turquesa + Negro/Blanco)
@@ -46,7 +51,7 @@ export function PlataformaPage() {
   const [isQuickInvoiceOpen, setIsQuickInvoiceOpen] = useState<boolean>(false);
 
   // Estados de Billetera Stellar
-  const [isWalletOpen, setIsWalletOpen] = useState<boolean>(false);
+  const isWalletOpen = rightPanel === 'wallet';
   const [balanceUSDC, setBalanceUSDC] = useState<number>(185.0);
   const [balanceXLM, setBalanceXLM] = useState<number>(42.8);
   const [publicKey, setPublicKey] = useState<string>('GD26UBYVEYYVVOVCMOLPMIKPWQRFV34LK3I7LHBNTUGYHYIKFMEREH2A');
@@ -69,7 +74,7 @@ export function PlataformaPage() {
 
   // En pantallas chicas la lista de miembros arranca oculta (el chat necesita el espacio).
   useEffect(() => {
-    if (typeof window !== 'undefined' && window.innerWidth < 1200) setIsMemberListOpen(false);
+    if (typeof window !== 'undefined' && window.innerWidth < 1200) setRightPanel(null);
   }, []);
   const errorText = (err: unknown, fallback: string) => (err instanceof Error && err.message ? err.message : fallback);
 
@@ -411,6 +416,17 @@ export function PlataformaPage() {
     }
   };
 
+  /** Cierra la sesión de Pollar y la cookie de core, y vuelve al login. */
+  const handleLogout = async () => {
+    try {
+      const client = (globalThis as { __kosmoviaPollarClient?: { logout: () => unknown } }).__kosmoviaPollarClient;
+      await fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' }).catch(() => {});
+      await Promise.resolve(client?.logout());
+    } finally {
+      window.location.href = '/login';
+    }
+  };
+
   const handleCreateInvoice = (amount: number, concept: string) => {
     const payload = JSON.stringify({ amount, concept });
     handleSendMessage(`[COBRO_B2B:${payload}]`);
@@ -444,7 +460,8 @@ export function PlataformaPage() {
         activeChannel.id,
         `✅ Cobro saldado: ${amount} USDC por "${concept}". Fee 0.5% deducido (${newSettlement.feeUSDC} USDC). Transacción confirmada en Stellar Testnet.`,
         currentUser
-      );
+        // El pago ya salió: si el canal no deja escribir (p. ej. #anuncios para miembros), no es un error del pago.
+      ).catch(() => {});
       setPayNotice({ kind: 'ok', text: `Cobro pagado: ${amount} USDC a ${payee}.` });
       return true;
     } catch (err) {
@@ -562,9 +579,14 @@ export function PlataformaPage() {
         messages={messagesByChannel[activeChannel.id] || []}
         onSendMessage={handleSendMessage}
         onToggleMobileMenu={() => setIsMobileOpen((prev) => !prev)}
-        onToggleMemberList={() => setIsMemberListOpen((prev) => !prev)}
+        onToggleMemberList={() => togglePanel('members')}
         isMemberListOpen={isMemberListOpen}
-        onOpenWallet={() => setIsWalletOpen((prev) => !prev)}
+        onOpenWallet={() => togglePanel('wallet')}
+        onToggleNotifications={() => {
+          if (rightPanel !== 'notifications') markPaymentsSeen();
+          togglePanel('notifications');
+        }}
+        isNotificationsOpen={rightPanel === 'notifications'}
         isWalletOpen={isWalletOpen}
         currentUserId={currentUser.id}
         onOpenProfile={setProfileCardUser}
@@ -584,6 +606,10 @@ export function PlataformaPage() {
         onOpenProfile={setProfileCardUser}
       />
 
+      {rightPanel === 'notifications' ? (
+        <NotificationsPanel transactions={transactions} onClose={() => setRightPanel(null)} />
+      ) : null}
+
       <UserCard
         user={profileCardUser}
         role={profileCardUser ? currentMembers.find((mm) => mm.id === profileCardUser.id)?.role : undefined}
@@ -592,7 +618,7 @@ export function PlataformaPage() {
         onTransfer={(username) => {
           setProfileCardUser(null);
           setSendTo({ recipient: username, nonce: Date.now() });
-          setIsWalletOpen(true);
+          setRightPanel('wallet');
         }}
         onEditProfile={() => {
           setProfileCardUser(null);
@@ -606,11 +632,13 @@ export function PlataformaPage() {
         onClose={() => setIsProfileModalOpen(false)}
         onSave={handleUpdateProfile}
         stellarAddress={publicKey}
+        onLogout={SERVICES_MODE === 'api' ? () => void handleLogout() : undefined}
       />
 
       <WalletDrawer
         isOpen={isWalletOpen}
-        onClose={() => setIsWalletOpen(false)}
+        onClose={() => setRightPanel(null)}
+        docked
         balanceUSDC={balanceUSDC}
         balanceXLM={balanceXLM}
         publicKey={publicKey}

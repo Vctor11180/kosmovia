@@ -2856,3 +2856,21 @@ html, body {
   display: grid; gap: 10px; padding: 14px; border-radius: 12px;
   border: 1px solid rgba(239, 68, 68, 0.45); background: rgba(239, 68, 68, 0.06);
 }
+
+/* Paneles fijos a la derecha (Miembros, Mi Wallet, Notificaciones): no tapan el chat */
+.kv-docked-panel {
+  width: 340px; max-width: none; height: 100%; flex-shrink: 0;
+  animation: none; box-shadow: none; overflow-y: auto;
+  border-left: 1px solid var(--line); background: var(--surface);
+}
+.member-sidebar.kv-docked-panel { width: 300px; }
+.kv-panel-head { display: flex; align-items: center; justify-content: space-between; }
+@media (max-width: 1199px) and (min-width: 769px) {
+  .kv-docked-panel {
+    position: absolute; right: 0; top: 0; bottom: 0; z-index: 35;
+    box-shadow: -12px 0 32px rgba(0, 0, 0, 0.45);
+  }
+}
+@media (max-width: 768px) {
+  .kv-docked-panel { position: fixed; inset: 0 0 0 auto; width: min(100vw, 380px); z-index: 60; }
+}

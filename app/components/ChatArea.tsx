@@ -5,8 +5,7 @@ import { Channel, Community, Message, User } from '../types';
 import { AvatarFace } from './AvatarFace';
 import { ComposerPlus } from './ComposerPlus';
 import { EmojiPicker } from './EmojiPicker';
-import { NotificationsBell } from './NotificationsBell';
-import { IconUsers, IconWallet } from './Icons';
+import { IconBell, IconUsers, IconWallet } from './Icons';
 import { WalletTransaction } from '../types';
 
 interface ChatAreaProps {
@@ -33,6 +32,9 @@ interface ChatAreaProps {
   isRefreshingWallet?: boolean;
   /** Campana de pagos enviados y recibidos. */
   notifications?: { transactions: WalletTransaction[]; unread: number; onOpen: () => void };
+  /** La campana abre/cierra las notificaciones en el panel derecho. */
+  onToggleNotifications?: () => void;
+  isNotificationsOpen?: boolean;
 }
 
 export function ChatArea({
@@ -55,6 +57,8 @@ export function ChatArea({
   onRefreshWallet,
   isRefreshingWallet,
   notifications,
+  onToggleNotifications,
+  isNotificationsOpen,
 }: ChatAreaProps) {
   const [inputText, setInputText] = useState('');
   const [paidInvoices, setPaidInvoices] = useState<Record<string, boolean>>({});
@@ -105,22 +109,32 @@ export function ChatArea({
           )}
         </div>
         <div className="chat-header-actions">
-          {notifications && (
-            <NotificationsBell
-              transactions={notifications.transactions}
-              unread={notifications.unread}
-              onOpen={notifications.onOpen}
-            />
+          {notifications && onToggleNotifications && (
+            <button
+              type="button"
+              className={`header-icon-btn ${isNotificationsOpen ? 'active' : ''}`}
+              onClick={onToggleNotifications}
+              aria-pressed={isNotificationsOpen}
+              aria-label={notifications.unread > 0 ? `Notificaciones: ${notifications.unread} nuevas` : 'Notificaciones'}
+              title="Notificaciones de pagos"
+              style={{ position: 'relative' }}
+            >
+              <IconBell />
+              {notifications.unread > 0 ? (
+                <span className="tab-pending-badge" style={{ position: 'absolute', top: -6, right: -6 }}>
+                  {notifications.unread > 9 ? '9+' : notifications.unread}
+                </span>
+              ) : null}
+            </button>
           )}
           {onOpenWallet && (
             <button
               type="button"
               className={`header-icon-btn ${isWalletOpen ? 'active' : ''}`}
               onClick={onOpenWallet}
-              aria-expanded={isWalletOpen}
+              aria-pressed={isWalletOpen}
               aria-label={balanceUSDC !== undefined ? `Mi Wallet: ${balanceUSDC.toFixed(2)} USDC` : 'Mi Wallet'}
               title={balanceUSDC !== undefined ? `Mi Wallet · ${balanceUSDC.toFixed(2)} USDC` : 'Mi Wallet'}
-              style={isWalletOpen ? { position: 'relative', zIndex: 95 } : undefined}
             >
               <IconWallet />
             </button>

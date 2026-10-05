@@ -12,6 +12,8 @@ interface ProfileModalProps {
   /** true si se guardó; false deja el modal abierto (el error lo muestra la página). */
   onSave: (updated: { displayName: string; bio: string }) => Promise<boolean> | void;
   stellarAddress?: string;
+  /** Cerrar sesión (Pollar + cookie de core). */
+  onLogout?: () => void;
 }
 
 export function ProfileModal({
@@ -20,6 +22,7 @@ export function ProfileModal({
   onClose,
   onSave,
   stellarAddress = 'GD26UBYVEYYVVOVCMOLPMIKPWQRFV34LK3I7LHBNTUGYHYIKFMEREH2A',
+  onLogout,
 }: ProfileModalProps) {
   const [activeTab, setActiveTab] = useState<'profile' | 'wallets' | 'kyc'>('profile');
   const [displayName, setDisplayName] = useState(user.displayName);
@@ -140,6 +143,11 @@ export function ProfileModal({
             </div>
 
             <div className="modal-actions">
+              {onLogout ? (
+                <button type="button" className="kv-danger-btn ghost" style={{ marginRight: 'auto' }} onClick={onLogout}>
+                  Cerrar sesión
+                </button>
+              ) : null}
               <button type="button" className="btn-secondary" onClick={onClose}>
                 Cancelar
               </button>
