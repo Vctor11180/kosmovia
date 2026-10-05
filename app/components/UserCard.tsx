@@ -36,10 +36,30 @@ const desde = (iso?: string) =>
 export function UserCard({ user, role, isSelf, onClose, onTransfer, onEditProfile }: UserCardProps) {
   const [full, setFull] = useState<User | null>(null);
   const [copied, setCopied] = useState(false);
+  const [tilt, setTilt] = useState<{ x: number; y: number; sheenX: number; sheenY: number }>({
+    x: 0,
+    y: 0,
+    sheenX: 50,
+    sheenY: 50,
+  });
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width;
+    const y = (e.clientY - rect.top) / rect.height;
+    const tiltX = (0.5 - y) * 14;
+    const tiltY = (x - 0.5) * 14;
+    setTilt({ x: tiltX, y: tiltY, sheenX: x * 100, sheenY: y * 100 });
+  };
+
+  const handleMouseLeave = () => {
+    setTilt({ x: 0, y: 0, sheenX: 50, sheenY: 50 });
+  };
 
   useEffect(() => {
     setFull(null);
     setCopied(false);
+    setTilt({ x: 0, y: 0, sheenX: 50, sheenY: 50 });
     if (!user) return;
     let cancelled = false;
     profileService
@@ -73,26 +93,6 @@ export function UserCard({ user, role, isSelf, onClose, onTransfer, onEditProfil
     } catch {
       setCopied(false);
     }
-  };
-
-  const [tilt, setTilt] = useState<{ x: number; y: number; sheenX: number; sheenY: number }>({
-    x: 0,
-    y: 0,
-    sheenX: 50,
-    sheenY: 50,
-  });
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = (e.clientX - rect.left) / rect.width;
-    const y = (e.clientY - rect.top) / rect.height;
-    const tiltX = (0.5 - y) * 14;
-    const tiltY = (x - 0.5) * 14;
-    setTilt({ x: tiltX, y: tiltY, sheenX: x * 100, sheenY: y * 100 });
-  };
-
-  const handleMouseLeave = () => {
-    setTilt({ x: 0, y: 0, sheenX: 50, sheenY: 50 });
   };
 
   return (
