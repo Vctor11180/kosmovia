@@ -2879,3 +2879,175 @@ html, body {
 .kv-brand-img { display: block; width: 100%; height: 100%; object-fit: cover; border-radius: inherit; }
 .kv-rail-logo { overflow: hidden; padding: 0; }
 .login-brand-icon .kv-brand-img { width: 56px; height: 56px; border-radius: 16px; margin: 0 auto; }
+
+/* ==============================================================================
+   Recibo Animado On-Chain de Pagos en el Chat (Stellar / Pollar)
+   ============================================================================== */
+.payment-receipt-card {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, rgba(45, 212, 191, 0.12) 0%, rgba(11, 31, 33, 0.96) 100%);
+  border: 1px solid rgba(45, 212, 191, 0.45);
+  box-shadow: 0 4px 24px rgba(45, 212, 191, 0.12), inset 0 1px 0 rgba(94, 234, 212, 0.2);
+  border-radius: 14px;
+  padding: 16px 18px;
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 400px;
+  animation: receiptAppear 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+[data-theme="light"] .payment-receipt-card {
+  background: linear-gradient(135deg, #f0fdfa 0%, #ffffff 100%);
+  border-color: rgba(15, 143, 132, 0.38);
+  box-shadow: 0 4px 20px rgba(15, 143, 132, 0.1);
+}
+
+@keyframes receiptAppear {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.receipt-sparkle-fx {
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  display: flex;
+  gap: 4px;
+  pointer-events: none;
+  font-size: 11px;
+  color: #5eead4;
+  opacity: 0.85;
+  animation: sparkleFloat 2.4s ease-in-out infinite alternate;
+}
+
+@keyframes sparkleFloat {
+  0% { transform: translateY(0) rotate(0deg); opacity: 0.5; }
+  100% { transform: translateY(-3px) rotate(12deg); opacity: 1; }
+}
+
+.receipt-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.receipt-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #5eead4;
+}
+
+[data-theme="light"] .receipt-badge {
+  color: #0f8f84;
+}
+
+.stellar-dot-pulse {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #2dd4bf;
+  box-shadow: 0 0 8px #5eead4;
+  animation: dotPulse 1.8s infinite;
+}
+
+@keyframes dotPulse {
+  0%, 100% { transform: scale(1); opacity: 0.9; }
+  50% { transform: scale(1.35); opacity: 1; box-shadow: 0 0 12px #5eead4; }
+}
+
+.receipt-status-pill {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: rgba(16, 185, 129, 0.16);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.receipt-main {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.receipt-amount-wrap {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.receipt-amount {
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--fg);
+  line-height: 1.1;
+}
+
+.receipt-asset {
+  font-size: 13px;
+  font-weight: 800;
+  color: #2dd4bf;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: rgba(45, 212, 191, 0.14);
+}
+
+.receipt-subtitle {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.4;
+  margin-top: 2px;
+}
+
+.receipt-subtitle strong {
+  color: var(--fg);
+}
+
+.receipt-footer {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+  margin-top: 4px;
+}
+
+.receipt-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.receipt-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.receipt-val {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--fg);
+}

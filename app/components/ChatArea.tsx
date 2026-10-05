@@ -37,6 +37,148 @@ interface ChatAreaProps {
   isNotificationsOpen?: boolean;
 }
 
+interface ParsedReceipt {
+  kind: 'transfer' | 'settlement';
+  amount: string;
+  asset: string;
+  recipient?: string;
+  concept?: string;
+  fee?: string;
+}
+
+function parseReceipt(content: string): ParsedReceipt | null {
+  if (content.startsWith('💸 He transferido')) {
+    const match = content.match(/^💸 He transferido\s+([\d.]+)\s+([A-Za-z]+)\s+a\s+(.+?)\s+mediante/);
+    if (match) {
+      return {
+        kind: 'transfer',
+        amount: match[1],
+        asset: match[2],
+        recipient: match[3].trim(),
+      };
+    }
+  }
+
+  if (content.startsWith('✅ Cobro saldado:')) {
+    const match = content.match(/^✅ Cobro saldado:\s*([\d.]+)\s*([A-Za-z]+)\s*por\s*"([^"]+)"/);
+    const feeMatch = content.match(/Fee\s*([\d.]+)\s*([A-Za-z]+)\s*deducido/);
+    if (match) {
+      return {
+        kind: 'settlement',
+        amount: match[1],
+        asset: match[2],
+        concept: match[3],
+        fee: feeMatch ? `${feeMatch[1]} ${feeMatch[2]}` : '0.5%',
+      };
+    }
+  }
+
+  if (content.startsWith('[RECIBO_STELLAR:')) {
+    try {
+      const raw = content.slice('[RECIBO_STELLAR:'.length, content.lastIndexOf(']'));
+      const parsed = JSON.parse(raw);
+      if (parsed && parsed.amount) {
+        return {
+          kind: 'transfer',
+          amount: String(parsed.amount),
+          asset: parsed.asset || 'USDC',
+          recipient: parsed.to,
+          concept: parsed.concept,
+          fee: parsed.fee,
+        };
+      }
+    } catch {}
+  }
+
+  return null;
+}
+
+function PaymentReceiptCard({ receipt }: { receipt: ParsedReceipt }) {
+  const [copied, setCopied] = useState(false);
+
+  const displayRecipient = receipt.recipient
+    ? receipt.recipient.startsWith('G') && receipt.recipient.length > 20
+      ? `${receipt.recipient.slice(0, 6)}...${receipt.recipient.slice(-6)}`
+      : receipt.recipient
+    : null;
+
+  const handleCopy = () => {
+    if (!receipt.recipient) return;
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard.writeText(receipt.recipient);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  return (
+    <div className="payment-receipt-card">
+      <div className="receipt-sparkle-fx" aria-hidden="true">
+        <span>✦</span>
+        <span>★</span>
+        <span>✦</span>
+      </div>
+      <div className="receipt-header">
+        <div className="receipt-badge">
+          <span className="stellar-dot-pulse" />
+          <span>Stellar Testnet · Recibo On-Chain</span>
+        </div>
+        <span className="receipt-status-pill">✓ Confirmado</span>
+      </div>
+
+      <div className="receipt-main">
+        <div className="receipt-amount-wrap">
+          <span className="receipt-amount">{receipt.amount}</span>
+          <span className="receipt-asset">{receipt.asset}</span>
+        </div>
+        <div className="receipt-subtitle">
+          {receipt.kind === 'transfer' ? (
+            <span>
+              Transferencia confirmada a{' '}
+              {displayRecipient ? (
+                <button
+                  type="button"
+                  onClick={handleCopy}
+                  title="Copiar dirección o usuario"
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    padding: 0,
+                    font: 'inherit',
+                    color: 'var(--accent, #2dd4bf)',
+                    cursor: 'pointer',
+                    textDecoration: 'underline',
+                    fontWeight: 700,
+                  }}
+                >
+                  {displayRecipient} {copied ? '(¡copiado!)' : ''}
+                </button>
+              ) : (
+                <strong>destinatario</strong>
+              )}
+            </span>
+          ) : (
+            <span>
+              Cobro liquidado por <strong>&ldquo;{receipt.concept}&rdquo;</strong>
+            </span>
+          )}
+        </div>
+      </div>
+
+      <div className="receipt-footer">
+        <div className="receipt-detail">
+          <span className="receipt-label">Comisión de Red</span>
+          <span className="receipt-val">{receipt.fee || 'Patrocinada · 0.00 XLM'}</span>
+        </div>
+        <div className="receipt-detail">
+          <span className="receipt-label">Liquidación</span>
+          <span className="receipt-val">Pollar / Horizon</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function ChatArea({
   channel,
   community,
@@ -200,9 +342,14 @@ export function ChatArea({
               }
             }
 
+            const receiptData = !invoiceData ? parseReceipt(msg.content) : null;
             const prev = index > 0 ? messages[index - 1] : null;
             const grouped =
-              !invoiceData && prev !== null && prev.author.id === msg.author.id && !prev.content.startsWith('[COBRO_B2B:');
+              !invoiceData &&
+              !receiptData &&
+              prev !== null &&
+              prev.author.id === msg.author.id &&
+              !prev.content.startsWith('[COBRO_B2B:');
             const isPaid = paidInvoices[msg.id];
             const isMine = currentUserId !== undefined && msg.author.id === currentUserId;
             const isPaying = payingInvoice === msg.id;
@@ -265,6 +412,8 @@ export function ChatArea({
                               : `Pagar ${invoiceData.amount} USDC a ${msg.author.username}`}
                       </button>
                     </div>
+                  ) : receiptData ? (
+                    <PaymentReceiptCard receipt={receiptData} />
                   ) : (
                     <p className="msg-content">{msg.content}</p>
                   )}
