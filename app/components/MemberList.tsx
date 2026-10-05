@@ -7,9 +7,25 @@ import { AvatarFace } from './AvatarFace';
 interface MemberListProps {
   members: User[];
   isOpen: boolean;
+  /** Abre la tarjeta de perfil del miembro. */
+  onOpenProfile?: (user: User) => void;
 }
 
-export function MemberList({ members, isOpen }: MemberListProps) {
+export function MemberList({ members, isOpen, onOpenProfile }: MemberListProps) {
+  // Cada fila abre el perfil, con mouse o teclado.
+  const open = (member: User) => ({
+    role: 'button' as const,
+    tabIndex: 0,
+    style: { cursor: 'pointer' },
+    title: `Ver perfil de ${member.username}`,
+    onClick: () => onOpenProfile?.(member),
+    onKeyDown: (e: React.KeyboardEvent) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        onOpenProfile?.(member);
+      }
+    },
+  });
   if (!isOpen) return null;
 
   const onlineMembers = members.filter((m) => m.isOnline);
@@ -22,7 +38,7 @@ export function MemberList({ members, isOpen }: MemberListProps) {
       </div>
       <div className="member-list">
         {onlineMembers.map((member) => (
-          <div key={member.id} className="member-item">
+          <div key={member.id} className="member-item" {...open(member)}>
             <div className="member-avatar-wrapper">
               <div className="member-avatar">
                 <AvatarFace avatar={member.avatar} name={member.displayName} />
@@ -51,7 +67,7 @@ export function MemberList({ members, isOpen }: MemberListProps) {
           </div>
           <div className="member-list">
             {offlineMembers.map((member) => (
-              <div key={member.id} className="member-item offline">
+              <div key={member.id} className="member-item offline" {...open(member)}>
                 <div className="member-avatar-wrapper">
                   <div className="member-avatar">
                     <AvatarFace avatar={member.avatar} name={member.displayName} />

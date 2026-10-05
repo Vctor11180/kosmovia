@@ -39,6 +39,9 @@ Los avatares muestran el **Kosmonauta** de cada perfil.
 - **Carga:** no se muestran los datos de ejemplo mientras llegan los reales. Si no tienes perfil, lo creas ahí mismo con un @usuario espacial y un Kosmonauta.
 - **Miembros:** solo tú sales "en línea" (todavía no hay presencia en tiempo real), y sin la etiqueta de rol falsa en cada mensaje.
 
+- **Perfil al tocar a alguien:** en el chat (avatar o nombre) y en la lista de miembros se abre una tarjeta con su Kosmonauta, su nivel, su X, su bio, desde cuándo está y su wallet. Tiene los botones **Transferir** (abre Mi Wallet en Enviar con su @usuario y 0,01) y **Copiar @usuario**. Si eres tú, dice Editar perfil.
+- **Destinatario reconocido:** al escribir un @usuario o pegar una wallet en Enviar, se ve a quién le envías (core busca perfiles también por wallet).
+
 ## Limitaciones del borrador
 - **Copias:** las piezas de sesión y Pollar son copias de core (`lib/core/`, ver su README). La versión final debería compartir el código o vivir en una sola app.
 - **Comunidades:** se ven las comunidades donde eres miembro. Si no estás en ninguna, la app te une a la primera. Todavía no hay botón para crear ni para unirse a otras.

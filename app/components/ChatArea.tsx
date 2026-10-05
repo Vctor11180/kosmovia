@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Channel, Community, Message } from '../types';
+import { Channel, Community, Message, User } from '../types';
 import { AvatarFace } from './AvatarFace';
 
 interface ChatAreaProps {
@@ -21,6 +21,8 @@ interface ChatAreaProps {
   onPayInvoice?: (amount: number, concept: string, payee: string) => Promise<boolean> | void;
   isWalletOpen?: boolean;
   currentUserId?: string;
+  /** Abre la tarjeta de perfil de quien escribió (avatar o nombre). */
+  onOpenProfile?: (user: User) => void;
 }
 
 export function ChatArea({
@@ -39,6 +41,7 @@ export function ChatArea({
   onPayInvoice,
   isWalletOpen,
   currentUserId,
+  onOpenProfile,
 }: ChatAreaProps) {
   const [inputText, setInputText] = useState('');
   const [paidInvoices, setPaidInvoices] = useState<Record<string, boolean>>({});
@@ -185,11 +188,26 @@ export function ChatArea({
             return (
               <article key={msg.id} className="message-item">
                 <div className="msg-avatar">
-                  <AvatarFace avatar={msg.author.avatar} name={msg.author.displayName} />
+                  <button
+                    type="button"
+                    onClick={() => onOpenProfile?.(msg.author)}
+                    aria-label={`Ver perfil de ${msg.author.username}`}
+                    style={{ ...{ background: 'none', border: 0, padding: 0, cursor: 'pointer', fontFamily: 'inherit' }, width: '100%', height: '100%', borderRadius: 'inherit', color: 'inherit' }}
+                  >
+                    <AvatarFace avatar={msg.author.avatar} name={msg.author.displayName} />
+                  </button>
                 </div>
                 <div className="msg-body">
                   <div className="msg-header">
-                    <span className="msg-author">{msg.author.displayName}</span>
+                    <button
+                      type="button"
+                      className="msg-author"
+                      onClick={() => onOpenProfile?.(msg.author)}
+                      title={`Ver perfil de ${msg.author.username}`}
+                      style={{ background: 'none', border: 0, padding: 0, cursor: 'pointer', fontFamily: 'inherit' }}
+                    >
+                      {msg.author.displayName}
+                    </button>
                     {msg.author.role && (
                       <span className={`msg-role-tag ${msg.author.role}`}>{msg.author.role}</span>
                     )}

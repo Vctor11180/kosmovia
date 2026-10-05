@@ -3,7 +3,8 @@ import { IChatService, MockChatService } from './chatService';
 import { ICommunityService, MockCommunityService } from './communityService';
 import { ISettlementService, MockSettlementService } from './settlementService';
 import { IWalletService, MockWalletService } from './walletService';
-import { ApiAuthService, ApiChatService, ApiCommunityService, ApiWalletService } from './api';
+import { IProfileService, MockProfileService } from './profileService';
+import { ApiAuthService, ApiChatService, ApiCommunityService, ApiProfileService, ApiWalletService } from './api';
 
 /**
  * Service Gateway (Hexagonal Architecture)
@@ -21,11 +22,13 @@ export const communityService: ICommunityService = api ? new ApiCommunityService
 export const chatService: IChatService = api ? new ApiChatService() : new MockChatService();
 export const walletService: IWalletService = api ? new ApiWalletService() : new MockWalletService();
 export const settlementService: ISettlementService = new MockSettlementService();
+export const profileService: IProfileService = api ? new ApiProfileService() : new MockProfileService();
 
 export * from './authService';
 export * from './chatService';
 export * from './communityService';
 export * from './settlementService';
 export * from './walletService';
+export * from './profileService';
 export * from './storage';
 export * from './mockData';

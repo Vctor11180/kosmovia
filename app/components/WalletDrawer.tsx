@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { SettlementRecord, WalletTransaction } from '../types';
 import { QrCode } from './QrCode';
+import { RecipientPreview } from './RecipientPreview';
 
 interface WalletDrawerProps {
   isOpen: boolean;
@@ -15,6 +16,8 @@ interface WalletDrawerProps {
   onSend: (to: string, amount: number, asset: 'USDC' | 'XLM') => Promise<boolean> | void;
   settlements?: SettlementRecord[];
   onDisbursePending?: () => void;
+  /** Abrir directo en "Enviar" con un destinatario (desde el perfil). `nonce` cambia en cada pedido. */
+  sendTo?: { recipient: string; nonce: number } | null;
 }
 
 export function WalletDrawer({
@@ -27,6 +30,7 @@ export function WalletDrawer({
   onSend,
   settlements = [],
   onDisbursePending,
+  sendTo,
 }: WalletDrawerProps) {
   const [activeTab, setActiveTab] = useState<'wallet' | 'settlements'>('wallet');
   const [view, setView] = useState<'overview' | 'send' | 'receive'>('overview');
@@ -37,6 +41,14 @@ export function WalletDrawer({
   const [isSending, setIsSending] = useState(false);
   const [isDisbursing, setIsDisbursing] = useState(false);
   const [disbursedNotice, setDisbursedNotice] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!sendTo) return;
+    setActiveTab('wallet');
+    setView('send');
+    setRecipient(sendTo.recipient);
+    setAmount('0.01');
+  }, [sendTo]);
 
   if (!isOpen) return null;
 
@@ -220,6 +232,7 @@ export function WalletDrawer({
                       placeholder="@usuario o G..."
                       required
                     />
+                    <RecipientPreview value={recipient} selfWallet={publicKey} />
                   </div>
 
                   <div className="form-group">

@@ -10,6 +10,7 @@ import { ProfileModal } from '../../components/ProfileModal';
 import { WalletDrawer } from '../../components/WalletDrawer';
 import { CreateChannelModal } from '../../components/CreateChannelModal';
 import { QuickInvoiceModal } from '../../components/QuickInvoiceModal';
+import { UserCard } from '../../components/UserCard';
 import { Channel, Community, Message, SettlementRecord, User, WalletTransaction } from '../../types';
 import {
   authService,
@@ -54,6 +55,9 @@ export function PlataformaPage() {
   // En modo api no se muestra nada hasta tener los datos reales (sin parpadeo de los de ejemplo).
   const [ready, setReady] = useState<boolean>(SERVICES_MODE !== 'api');
   const [loadError, setLoadError] = useState<string | null>(null);
+  // Tarjeta de perfil abierta (desde el chat o la lista de miembros) y "Transferir" a esa persona.
+  const [profileCardUser, setProfileCardUser] = useState<User | null>(null);
+  const [sendTo, setSendTo] = useState<{ recipient: string; nonce: number } | null>(null);
   const errorText = (err: unknown, fallback: string) => (err instanceof Error && err.message ? err.message : fallback);
 
   // Sincronizar tema con atributo en documentElement
@@ -373,6 +377,7 @@ export function PlataformaPage() {
         onOpenWallet={() => setIsWalletOpen((prev) => !prev)}
         isWalletOpen={isWalletOpen}
         currentUserId={currentUser.id}
+        onOpenProfile={setProfileCardUser}
         balanceUSDC={balanceUSDC}
         theme={theme}
         onToggleTheme={handleToggleTheme}
@@ -383,6 +388,23 @@ export function PlataformaPage() {
       <MemberList
         members={currentMembers}
         isOpen={isMemberListOpen}
+        onOpenProfile={setProfileCardUser}
+      />
+
+      <UserCard
+        user={profileCardUser}
+        role={profileCardUser ? currentMembers.find((mm) => mm.id === profileCardUser.id)?.role : undefined}
+        isSelf={profileCardUser?.id === currentUser.id}
+        onClose={() => setProfileCardUser(null)}
+        onTransfer={(username) => {
+          setProfileCardUser(null);
+          setSendTo({ recipient: username, nonce: Date.now() });
+          setIsWalletOpen(true);
+        }}
+        onEditProfile={() => {
+          setProfileCardUser(null);
+          setIsProfileModalOpen(true);
+        }}
       />
 
       <ProfileModal
@@ -403,6 +425,7 @@ export function PlataformaPage() {
         onSend={handleSendPayment}
         settlements={settlements}
         onDisbursePending={handleDisbursePending}
+        sendTo={sendTo}
       />
 
       <CreateChannelModal

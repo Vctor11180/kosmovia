@@ -13,6 +13,7 @@ import type { IAuthService } from '../authService';
 import type { CreateChannelInput, CreateCommunityInput, ICommunityService } from '../communityService';
 import type { IChatService } from '../chatService';
 import type { IWalletService, SendPaymentInput, WalletBalances } from '../walletService';
+import type { IProfileService } from '../profileService';
 import { apiRequest } from '../../lib/core/api-client.ts';
 import { renderAvatar } from '../../lib/core/avatar/generator.ts';
 import { fetchBalances, shortAddress } from '../../lib/core/pollar-horizon.ts';
@@ -40,6 +41,8 @@ type ProfileRow = {
   avatar_style: string | null;
   bio: string | null;
   trust_level?: number | null;
+  x_handle?: string | null;
+  created_at?: string | null;
 };
 type AuthorRow = Pick<ProfileRow, 'id' | 'username' | 'display_name' | 'avatar_seed' | 'avatar_style'>;
 type CommunityRow = { id: string; slug: string; name: string; icon: string | null; description: string | null };
@@ -79,7 +82,10 @@ function avatarUri(seed: string | null, style: string | null, fallback: string):
  * `role` solo para la lista de miembros (en los mensajes no se conoce). No hay
  * presencia en tiempo real todavía: solo quien está conectado sale "en línea".
  */
-function toUser(p: AuthorRow & Partial<Pick<ProfileRow, 'bio' | 'wallet' | 'trust_level'>>, opts: { role?: string; online?: boolean } = {}): User {
+function toUser(
+  p: AuthorRow & Partial<Pick<ProfileRow, 'bio' | 'wallet' | 'trust_level' | 'x_handle' | 'created_at'>>,
+  opts: { role?: string; online?: boolean } = {},
+): User {
   const level = p.trust_level === 1 || p.trust_level === 2 ? p.trust_level : 0;
   return {
     id: p.id,
@@ -91,6 +97,8 @@ function toUser(p: AuthorRow & Partial<Pick<ProfileRow, 'bio' | 'wallet' | 'trus
     bio: p.bio ?? undefined,
     wallet: p.wallet,
     trustLevel: level,
+    xHandle: p.x_handle ?? undefined,
+    memberSince: p.created_at ?? undefined,
   };
 }
 
@@ -130,6 +138,32 @@ export class ApiAuthService implements IAuthService {
   /** El login real es con Pollar (app/login): aquí solo se devuelve el perfil de la sesión. */
   async login(_username: string): Promise<User> {
     return this.getCurrentUser();
+  }
+}
+
+// ------------------------------------------------------------ public profiles
+
+const WALLET_RE = /^G[A-Z2-7]{55}$/;
+const HANDLE_RE = /^[a-z0-9_]{3,20}$/;
+
+/**
+ * Perfiles públicos (GET /api/profiles/:usuario o :wallet, sin datos privados).
+ * Con caché corta: abrir varias veces la misma tarjeta no repite la consulta.
+ */
+export class ApiProfileService implements IProfileService {
+  private cache = new Map<string, { at: number; user: User | null }>();
+
+  async getPublicProfile(handleOrWallet: string): Promise<User | null> {
+    const raw = handleOrWallet.trim();
+    const key = WALLET_RE.test(raw.toUpperCase()) ? raw.toUpperCase() : raw.replace(/^@/, '').toLowerCase();
+    if (!WALLET_RE.test(key) && !HANDLE_RE.test(key)) return null;
+    const hit = this.cache.get(key);
+    if (hit && Date.now() - hit.at < 60_000) return hit.user;
+    const res = await apiRequest<{ profile: ProfileRow }>(`/api/profiles/${encodeURIComponent(key)}`);
+    if (!res.ok && res.status !== 404) throw new ApiError(res.error);
+    const user = res.ok ? toUser(res.data.profile) : null;
+    this.cache.set(key, { at: Date.now(), user });
+    return user;
   }
 }
 

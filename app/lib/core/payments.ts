@@ -233,7 +233,7 @@ export function attemptDeadlineMs(startedAtMs: number): number {
 type OutcomeLike = { status?: string; hash?: string; code?: string; details?: string; message?: string };
 
 /** Why a send provably never left. */
-export type RejectionReason = "noWallet" | "declined" | "balance" | "fee" | "destination" | "other";
+export type RejectionReason = "noWallet" | "notReady" | "declined" | "balance" | "fee" | "destination" | "other";
 
 /**
  * Backend codes that refuse a request before anything is submitted. An
@@ -246,6 +246,9 @@ const REJECTED_CODES: Record<string, RejectionReason> = {
   TX_FEE_LIMIT_EXCEEDED: "fee",
   TX_DESTINATION_NOT_FOUND: "destination",
   TX_NO_TRUSTLINE: "destination",
+  // 409 of /tx/build-sign-submit: Pollar never finished provisioning the custodial
+  // wallet, so it refuses to build or sign anything (it retries on the next sign-in).
+  SDK_WALLET_NOT_READY: "notReady",
 };
 
 /** Messages the SDK raises on the client before sending, compared whole. */
@@ -311,6 +314,8 @@ export function rejectionMessage(reason: RejectionReason): string {
   switch (reason) {
     case "noWallet":
       return "Tu wallet no está conectada. Vuelve a entrar e intenta de nuevo. No se envió nada.";
+    case "notReady":
+      return "Pollar todavía no terminó de crear tu wallet, así que no se envió nada. Sal y vuelve a entrar para que lo reintente; si sigue igual, prueba entrando con Freighter.";
     case "declined":
       return "Cancelaste la firma: no se envió nada.";
     case "balance":

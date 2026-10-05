@@ -10,6 +10,8 @@ export interface User {
   // Campos de core (mismo contrato que core/types/index.ts)
   wallet?: string; // dirección Stellar (G...)
   trustLevel?: 0 | 1 | 2; // 0 wallet · 1 social (X verificado) · 2 empresa
+  xHandle?: string; // cuenta de X verificada
+  memberSince?: string; // ISO: cuándo creó su perfil
 }
 
 export interface Channel {
