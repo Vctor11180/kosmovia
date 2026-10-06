@@ -14,6 +14,7 @@ import { UserCard } from '../../components/UserCard';
 import { NotificationsPanel } from '../../components/NotificationsPanel';
 import { CreateCommunityModal } from '../../components/CreateCommunityModal';
 import { CommunitySettingsModal } from '../../components/CommunitySettingsModal';
+import { PaymentCelebration, CelebrationPayload } from '../../components/PaymentCelebration';
 import { Channel, Community, Message, SettlementRecord, User, WalletTransaction } from '../../types';
 import {
   authService,
@@ -71,6 +72,7 @@ export function PlataformaPage() {
   const knownTxIds = useRef<Set<string> | null>(null);
   const [isCreateCommunityOpen, setIsCreateCommunityOpen] = useState(false);
   const [isCommunitySettingsOpen, setIsCommunitySettingsOpen] = useState(false);
+  const [celebrationData, setCelebrationData] = useState<CelebrationPayload | null>(null);
 
   // En pantallas chicas la lista de miembros arranca oculta (el chat necesita el espacio).
   useEffect(() => {
@@ -463,6 +465,12 @@ export function PlataformaPage() {
         // El pago ya salió: si el canal no deja escribir (p. ej. #anuncios para miembros), no es un error del pago.
       ).catch(() => {});
       setPayNotice({ kind: 'ok', text: `Cobro pagado: ${amount} USDC a ${payee}.` });
+      setCelebrationData({
+        amount,
+        asset: 'USDC',
+        concept: concept || 'Cobro B2B liquidado',
+        recipient: payee,
+      });
       return true;
     } catch (err) {
       console.error('[PlataformaPage] Error paying invoice:', err);
@@ -508,6 +516,12 @@ export function PlataformaPage() {
       setBalanceXLM(balances.xlm);
 
       setPayNotice({ kind: 'ok', text: `Pago enviado: ${amount} ${asset} a ${to}.` });
+      setCelebrationData({
+        amount,
+        asset,
+        concept: 'Transferencia instantánea',
+        recipient: to,
+      });
       await chatService.sendMessage(
         activeChannel.id,
         `💸 He transferido ${amount} ${asset} a ${to} mediante Stellar Testnet (Tx verificada).`,
@@ -680,6 +694,12 @@ export function PlataformaPage() {
         onClose={() => setIsQuickInvoiceOpen(false)}
         onSubmit={handleCreateInvoice}
       />
+
+      <PaymentCelebration
+        data={celebrationData}
+        onClose={() => setCelebrationData(null)}
+      />
+
       {payNotice ? (
         <div
           role={payNotice.kind === 'error' ? 'alert' : 'status'}

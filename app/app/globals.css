@@ -3173,3 +3173,171 @@ html, body {
   box-shadow: 0 0 24px rgba(45, 212, 191, 0.5) !important;
 }
 
+/* ============================================================
+   CELEBRACIÓN ON-CHAIN (CONFETTI & HOLOGRAPHIC SUCCESS HUD)
+   ============================================================ */
+.celebration-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(6, 19, 20, 0.65);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  animation: fadeInOverlay 0.25s ease-out;
+  cursor: pointer;
+}
+
+.celebration-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.celebration-card {
+  position: relative;
+  z-index: 2;
+  background: linear-gradient(135deg, rgba(11, 31, 33, 0.95) 0%, rgba(6, 19, 20, 0.98) 100%);
+  border: 1px solid rgba(45, 212, 191, 0.5);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.8), 0 0 40px rgba(45, 212, 191, 0.3);
+  border-radius: 20px;
+  padding: 30px 36px;
+  text-align: center;
+  max-width: 440px;
+  width: 90%;
+  animation: celebrationPop 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  overflow: hidden;
+  cursor: default;
+}
+
+.celebration-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #2dd4bf, #5eead4, #fcd34d, transparent);
+}
+
+.celebration-sparkles-top {
+  letter-spacing: 0.35em;
+  color: #fcd34d;
+  font-size: 15px;
+  margin-bottom: 8px;
+  text-shadow: 0 0 12px rgba(245, 158, 11, 0.6);
+}
+
+.celebration-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: rgba(45, 212, 191, 0.12);
+  border: 1px solid rgba(45, 212, 191, 0.35);
+  color: #5eead4;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+}
+
+.celebration-amount-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.celebration-amount-val {
+  font-size: 44px;
+  font-weight: 900;
+  color: #f2fbfa;
+  letter-spacing: -0.02em;
+  text-shadow: 0 0 24px rgba(45, 212, 191, 0.4);
+}
+
+.celebration-amount-asset {
+  font-size: 20px;
+  font-weight: 800;
+  color: #2dd4bf;
+}
+
+.celebration-concept {
+  font-size: 14px;
+  color: #8fb3b0;
+  margin: 0 0 12px 0;
+  line-height: 1.4;
+}
+
+.celebration-recipient {
+  font-size: 13px;
+  color: #f2fbfa;
+  background: rgba(20, 50, 53, 0.6);
+  padding: 6px 14px;
+  border-radius: 8px;
+  display: inline-block;
+  margin-bottom: 20px;
+  border: 1px solid rgba(45, 212, 191, 0.2);
+}
+
+.celebration-footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.celebration-subdetail {
+  font-size: 11px;
+  color: #8fb3b0;
+  font-weight: 500;
+}
+
+.celebration-dismiss-btn {
+  background: linear-gradient(135deg, #14b8a6 0%, #2dd4bf 100%);
+  color: #061314;
+  border: none;
+  padding: 9px 26px;
+  border-radius: 10px;
+  font-weight: 800;
+  font-size: 13px;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(45, 212, 191, 0.4);
+  transition: transform 0.15s ease, filter 0.15s ease;
+}
+
+.celebration-dismiss-btn:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.1);
+}
+
+@keyframes celebrationPop {
+  0% {
+    transform: scale(0.65) translateY(24px);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeInOverlay {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+
