@@ -74,7 +74,7 @@ export function PlataformaPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   // Tarjeta de perfil abierta (desde el chat o la lista de miembros) y "Transferir" a esa persona.
   const [profileCardUser, setProfileCardUser] = useState<User | null>(null);
-  const [sendTo, setSendTo] = useState<{ recipient: string; nonce: number } | null>(null);
+  const [sendTo, setSendTo] = useState<{ recipient: string; amount?: number; concept?: string; nonce: number } | null>(null);
   // Saldo a mano (botón ↻) y notificaciones de pagos (revisa cada 20 s).
   const [isRefreshingWallet, setIsRefreshingWallet] = useState(false);
   const [lastSeenPayments, setLastSeenPayments] = useState<number>(0);
@@ -635,6 +635,10 @@ export function PlataformaPage() {
         onToggleTheme={handleToggleTheme}
         onOpenQuickInvoice={() => setIsQuickInvoiceOpen(true)}
         onPayInvoice={handlePayInvoice}
+        onPayInWallet={(recipient, amount, concept) => {
+          setSendTo({ recipient, amount, concept, nonce: Date.now() });
+          setRightPanel('wallet');
+        }}
       />
 
       {rightPanel !== null ? (

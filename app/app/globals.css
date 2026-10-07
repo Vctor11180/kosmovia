@@ -828,70 +828,339 @@ html, body {
   transform: scale(1.15);
 }
 
+/* ==============================================================================
+   Kosmovia · Tarjeta de Cobro B2B con QR y Liquidación en Stellar
+   ============================================================================== */
 .invoice-card {
-  background: linear-gradient(135deg, rgba(0, 242, 254, 0.1) 0%, rgba(10, 17, 26, 0.95) 100%);
-  border: 1px solid rgba(0, 242, 254, 0.35);
-  border-radius: 12px;
-  padding: 14px 16px;
+  background: linear-gradient(135deg, rgba(45, 212, 191, 0.08) 0%, rgba(11, 31, 33, 0.96) 100%);
+  border: 1px solid rgba(45, 212, 191, 0.35);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(94, 234, 212, 0.15);
+  border-radius: 14px;
+  padding: 16px 18px;
   margin-top: 8px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  max-width: 360px;
+  gap: 12px;
+  max-width: 440px;
+  width: 100%;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.invoice-card.paid {
+  border-color: rgba(16, 185, 129, 0.5);
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(11, 31, 33, 0.96) 100%);
+  box-shadow: 0 4px 20px rgba(16, 185, 129, 0.12), inset 0 1px 0 rgba(52, 211, 153, 0.2);
 }
 
 .invoice-header-row {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.invoice-badge-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .invoice-tag {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  padding: 2px 7px;
-  border-radius: 4px;
+  letter-spacing: 0.06em;
+  padding: 3px 8px;
+  border-radius: 6px;
   background: var(--accent);
-  color: #05080c;
+  color: #061314;
+}
+
+.invoice-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+}
+
+.invoice-status-pill.pending {
+  background: rgba(45, 212, 191, 0.1);
+  border-color: rgba(45, 212, 191, 0.3);
+  color: var(--accent);
+}
+
+.invoice-status-pill.owner {
+  background: rgba(251, 191, 36, 0.1);
+  border-color: rgba(251, 191, 36, 0.35);
+  color: #fbbf24;
+}
+
+.invoice-status-pill.paid {
+  background: rgba(16, 185, 129, 0.12);
+  border-color: rgba(16, 185, 129, 0.35);
+  color: #34d399;
+}
+
+.invoice-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.invoice-status-dot.pulse {
+  animation: kvStatusPulse 1.8s ease-in-out infinite;
+}
+
+@keyframes kvStatusPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.85); }
+}
+
+.invoice-amount-block {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
 }
 
 .invoice-amount-text {
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 800;
   color: var(--fg);
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.invoice-asset-unit {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent);
+  margin-left: 2px;
+}
+
+.invoice-network-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.invoice-details-box {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 .invoice-concept {
-  font-size: 13px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--fg);
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.invoice-concept-quote {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.invoice-meta-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 11px;
   color: var(--muted);
+  border-top: 1px dashed var(--line);
+  padding-top: 6px;
+  margin-top: 2px;
+}
+
+.invoice-meta-item strong {
+  color: var(--fg);
+  font-weight: 600;
+}
+
+/* Sección QR Expandible */
+.invoice-qr-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 14px;
+  background: var(--surface-alt);
+  border: 1px solid rgba(45, 212, 191, 0.25);
+  border-radius: 12px;
+  animation: kvQrAppear 0.22s ease-out;
+}
+
+@keyframes kvQrAppear {
+  from { opacity: 0; transform: translateY(-6px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.invoice-qr-wrapper {
+  padding: 10px;
+  background: #F2FBFA;
+  border-radius: 14px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+}
+
+.invoice-qr-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+  width: 100%;
+}
+
+.invoice-qr-hint {
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.3;
+}
+
+.invoice-qr-hint strong {
+  color: var(--accent);
+}
+
+.btn-invoice-copy {
+  background: rgba(45, 212, 191, 0.1);
+  border: 1px solid rgba(45, 212, 191, 0.3);
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 6px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  touch-action: manipulation;
+}
+
+.btn-invoice-copy:hover,
+.btn-invoice-copy:active {
+  background: rgba(45, 212, 191, 0.2);
+  border-color: var(--accent);
+}
+
+/* Fila de Acciones */
+.invoice-actions-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.invoice-payer-controls,
+.invoice-owner-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  flex: 1;
 }
 
 .btn-pay-invoice {
   background: var(--accent);
-  color: #05080c;
+  color: #061314;
   border: none;
   border-radius: 8px;
-  padding: 8px 16px;
+  padding: 8px 14px;
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
-  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   transition: all 0.15s ease;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  flex: 1;
+  min-height: 38px;
 }
 
-.btn-pay-invoice:hover {
+.btn-pay-invoice:hover:not(:disabled) {
   background: var(--accent-hover);
   transform: translateY(-1px);
 }
 
-.btn-pay-invoice.paid {
-  background: rgba(16, 185, 129, 0.2);
-  border: 1px solid #10b981;
+.btn-pay-invoice:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.btn-pay-invoice:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-invoice-action {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  min-height: 38px;
+}
+
+.btn-invoice-action.outline {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--line);
+  color: var(--fg);
+}
+
+.btn-invoice-action.outline:hover,
+.btn-invoice-action.outline.active {
+  background: rgba(45, 212, 191, 0.15);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.btn-invoice-action.secondary {
+  background: var(--surface-alt);
+  border: 1px solid var(--line);
+  color: var(--fg);
+}
+
+.btn-invoice-action.secondary:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.btn-invoice-action:active {
+  transform: scale(0.98);
+}
+
+.invoice-confirmed-box {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
   color: #34d399;
-  cursor: default;
-  transform: none;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  padding: 8px 14px;
+  border-radius: 8px;
+  width: 100%;
+  justify-content: center;
 }
 
 /* Header Actions */

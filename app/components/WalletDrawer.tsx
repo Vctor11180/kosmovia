@@ -17,8 +17,8 @@ interface WalletDrawerProps {
   onSend: (to: string, amount: number, asset: 'USDC' | 'XLM') => Promise<boolean> | void;
   settlements?: SettlementRecord[];
   onDisbursePending?: () => void;
-  /** Abrir directo en "Enviar" con un destinatario (desde el perfil). `nonce` cambia en cada pedido. */
-  sendTo?: { recipient: string; nonce: number } | null;
+  /** Abrir directo en "Enviar" con un destinatario y monto opcional. `nonce` cambia en cada pedido. */
+  sendTo?: { recipient: string; amount?: number; concept?: string; nonce: number } | null;
   /** Botón ↻ (solo ícono) junto al saldo. */
   onRefresh?: () => void;
   isRefreshing?: boolean;
@@ -56,7 +56,11 @@ export function WalletDrawer({
     setActiveTab('wallet');
     setView('send');
     setRecipient(sendTo.recipient);
-    setAmount('0.01');
+    if (typeof sendTo.amount === 'number' && sendTo.amount > 0) {
+      setAmount(String(sendTo.amount));
+    } else {
+      setAmount('0.01');
+    }
   }, [sendTo]);
 
   if (!isOpen) return null;

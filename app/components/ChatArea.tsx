@@ -7,6 +7,7 @@ import { ComposerPlus } from './ComposerPlus';
 import { EmojiPicker } from './EmojiPicker';
 import { IconBell, IconUsers, IconWallet } from './Icons';
 import { WalletTransaction } from '../types';
+import { InvoiceCard } from './InvoiceCard';
 
 interface ChatAreaProps {
   channel: Channel;
@@ -35,6 +36,8 @@ interface ChatAreaProps {
   /** La campana abre/cierra las notificaciones en el panel derecho. */
   onToggleNotifications?: () => void;
   isNotificationsOpen?: boolean;
+  /** Abre la billetera pre-cargada con el cobro para pagar o liquidar. */
+  onPayInWallet?: (recipient: string, amount: number, concept: string) => void;
 }
 
 interface ParsedReceipt {
@@ -201,6 +204,7 @@ export function ChatArea({
   notifications,
   onToggleNotifications,
   isNotificationsOpen,
+  onPayInWallet,
 }: ChatAreaProps) {
   const [inputText, setInputText] = useState('');
   const [paidInvoices, setPaidInvoices] = useState<Record<string, boolean>>({});
@@ -394,28 +398,17 @@ export function ChatArea({
                   )}
 
                   {invoiceData ? (
-                    <div className="invoice-card">
-                      <div className="invoice-header-row">
-                        <span className="invoice-tag">Cobro en Stellar</span>
-                        <span className="invoice-amount-text">{invoiceData.amount} USDC</span>
-                      </div>
-                      <p className="invoice-concept">{invoiceData.concept}</p>
-                      <button
-                        type="button"
-                        className={`btn-pay-invoice ${isPaid ? 'paid' : ''}`}
-                        onClick={() => invoiceData && void handlePay(msg.id, invoiceData.amount, invoiceData.concept, msg.author.username)}
-                        disabled={isPaid || isMine || isPaying || payingInvoice !== null}
-                        title={isMine ? 'Es tu propio cobro' : undefined}
-                      >
-                        {isPaid
-                          ? '✓ Pago Confirmado en Testnet'
-                          : isMine
-                            ? 'Tu cobro: esperando pago'
-                            : isPaying
-                              ? 'Pagando…'
-                              : `Pagar ${invoiceData.amount} USDC a ${msg.author.username}`}
-                      </button>
-                    </div>
+                    <InvoiceCard
+                      messageId={msg.id}
+                      author={msg.author}
+                      amount={invoiceData.amount}
+                      concept={invoiceData.concept}
+                      isPaid={Boolean(isPaid)}
+                      isMine={Boolean(isMine)}
+                      isPaying={payingInvoice === msg.id}
+                      onPayDirect={() => invoiceData && void handlePay(msg.id, invoiceData.amount, invoiceData.concept, msg.author.username)}
+                      onPayInWallet={onPayInWallet ? () => onPayInWallet(msg.author.username, invoiceData.amount, invoiceData.concept) : undefined}
+                    />
                   ) : receiptData ? (
                     <PaymentReceiptCard receipt={receiptData} />
                   ) : (
