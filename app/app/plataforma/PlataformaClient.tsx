@@ -572,6 +572,10 @@ export function PlataformaPage() {
       <div
         className="mobile-backdrop"
         onClick={() => setIsMobileOpen(false)}
+        onTouchEnd={(e) => {
+          e.preventDefault();
+          setIsMobileOpen(false);
+        }}
         aria-hidden="true"
       />
 
@@ -603,6 +607,7 @@ export function PlataformaPage() {
           setIsCommunitySettingsOpen(true);
         }}
         onNotice={(text) => setPayNotice({ kind: 'ok', text })}
+        onClose={() => setIsMobileOpen(false)}
       />
 
       <ChatArea

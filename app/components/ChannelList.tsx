@@ -16,6 +16,8 @@ interface ChannelListProps {
   isOwner?: boolean;
   onOpenSettings?: () => void;
   onNotice?: (text: string) => void;
+  /** Cierra la barra de canales en celular. */
+  onClose?: () => void;
 }
 
 export function ChannelList({
@@ -28,11 +30,27 @@ export function ChannelList({
   isOwner = false,
   onOpenSettings,
   onNotice,
+  onClose,
 }: ChannelListProps) {
   return (
     <aside className="channel-sidebar" aria-label="Canales">
       <div className="community-header">
         <h2 className="community-title">{community.name}</h2>
+        {onClose ? (
+          <button
+            type="button"
+            className="wallet-close-btn mobile-only"
+            onClick={onClose}
+            onTouchEnd={(e) => {
+              e.preventDefault();
+              onClose();
+            }}
+            aria-label="Cerrar canales"
+            title="Cerrar"
+          >
+            ✕
+          </button>
+        ) : null}
       </div>
 
       <CommunityCard

@@ -5,8 +5,8 @@ import type { NextConfig } from 'next';
  * mismo servidor, así la cookie de sesión y el login con Pollar usan el mismo origen.
  */
 const nextConfig: NextConfig = {
-  // El indicador de desarrollo de Next tapaba la barra izquierda.
-  devIndicators: { position: 'bottom-right' },
+  // Desactivar indicador flotante de desarrollo que tapa botones en celular.
+  devIndicators: false,
   // Permitir acceso desde dispositivos en la red local (celulares en Wi-Fi o USB)
   allowedDevOrigins: [
     '192.168.0.13',
