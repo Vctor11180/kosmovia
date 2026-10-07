@@ -35,12 +35,43 @@ export function MemberList({ members, isOpen, onOpenProfile, onClose }: MemberLi
 
   return (
     <aside className="member-sidebar kv-docked-panel" aria-label="Miembros de la comunidad">
-      <div className="kv-panel-head" style={{ padding: '14px 16px 8px' }}>
-        <span className="member-section-header" style={{ padding: 0, margin: 0 }}>
-          Miembros ({members.length})
-        </span>
+      <div className="kv-panel-head">
+        <div className="kv-panel-head-title">
+          {onClose ? (
+            <button
+              type="button"
+              className="wallet-back-btn mobile-only"
+              onClick={onClose}
+              onTouchEnd={(e) => {
+                e.preventDefault();
+                onClose();
+              }}
+              aria-label="Volver al chat"
+              title="Volver al chat"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M19 12H5" />
+                <path d="M12 19l-7-7 7-7" />
+              </svg>
+              <span>Chat</span>
+            </button>
+          ) : null}
+          <span className="member-section-header" style={{ padding: 0, margin: 0, fontSize: '13px', fontWeight: 700 }}>
+            Miembros ({members.length})
+          </span>
+        </div>
         {onClose ? (
-          <button type="button" className="wallet-close-btn" onClick={onClose} aria-label="Cerrar miembros">
+          <button
+            type="button"
+            className="wallet-close-btn"
+            onClick={onClose}
+            onTouchEnd={(e) => {
+              e.preventDefault();
+              onClose();
+            }}
+            aria-label="Cerrar miembros"
+            title="Cerrar"
+          >
             ✕
           </button>
         ) : null}

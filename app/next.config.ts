@@ -7,6 +7,15 @@ import type { NextConfig } from 'next';
 const nextConfig: NextConfig = {
   // El indicador de desarrollo de Next tapaba la barra izquierda.
   devIndicators: { position: 'bottom-right' },
+  // Permitir acceso desde dispositivos en la red local (celulares en Wi-Fi o USB)
+  allowedDevOrigins: [
+    '192.168.0.13',
+    '192.168.0.13:3000',
+    'localhost:3000',
+    '127.0.0.1:3000',
+    '26.167.40.166',
+    '26.167.40.166:3000',
+  ],
   // pg es un módulo de Node: que Next no lo empaquete.
   serverExternalPackages: ['pg'],
 };

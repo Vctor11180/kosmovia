@@ -37,11 +37,17 @@ export function PlataformaPage() {
   const [activeChannelId, setActiveChannelId] = useState<string>('chan-1');
   const [messagesByChannel, setMessagesByChannel] = useState<Record<string, Message[]>>(INITIAL_MESSAGES);
   const [isMobileOpen, setIsMobileOpen] = useState<boolean>(false);
-  // Panel derecho: Miembros, Mi Wallet o Notificaciones, uno a la vez y fijo (en móvil arranca cerrado).
-  const [rightPanel, setRightPanel] = useState<'members' | 'wallet' | 'notifications' | null>(() => {
-    if (typeof window !== 'undefined' && window.innerWidth < 1200) return null;
-    return 'members';
-  });
+  // Panel derecho: Miembros, Mi Wallet o Notificaciones, uno a la vez.
+  // En móvil y al cargar siempre arranca en null para ver el chat de inmediato.
+  const [rightPanel, setRightPanel] = useState<'members' | 'wallet' | 'notifications' | null>(null);
+
+  // En computadoras de escritorio amplias (>= 1200px), abrir Miembros automáticamente al cargar
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.innerWidth >= 1200) {
+      setRightPanel('members');
+    }
+  }, []);
+
   const togglePanel = (panel: 'members' | 'wallet' | 'notifications') =>
     setRightPanel((prev) => (prev === panel ? null : panel));
   const isMemberListOpen = rightPanel === 'members';
@@ -630,6 +636,10 @@ export function PlataformaPage() {
         <div
           className="mobile-backdrop mobile-right-backdrop"
           onClick={() => setRightPanel(null)}
+          onTouchEnd={(e) => {
+            e.preventDefault();
+            setRightPanel(null);
+          }}
           aria-hidden="true"
         />
       ) : null}

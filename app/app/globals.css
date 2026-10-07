@@ -1533,7 +1533,7 @@ html, body {
     display: block !important;
     opacity: 1 !important;
     pointer-events: auto !important;
-    z-index: 55 !important;
+    z-index: 65 !important;
   }
 
   .chat-input-container {
@@ -2032,16 +2032,40 @@ html, body {
 }
 
 .wallet-close-btn {
-  background: transparent;
-  border: none;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--line);
   color: var(--muted);
   font-size: 16px;
   cursor: pointer;
-  padding: 4px;
+  padding: 0;
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  min-height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  flex-shrink: 0;
 }
 
 .wallet-close-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
   color: var(--fg);
+}
+
+.wallet-close-btn:active {
+  background: rgba(45, 212, 191, 0.18);
+  border-color: var(--accent);
+  color: var(--accent);
+  transform: scale(0.96);
+}
+
+.wallet-back-btn {
+  display: none;
 }
 
 .wallet-drawer-body {
@@ -2909,18 +2933,71 @@ html, body {
   border-left: 1px solid var(--line); background: var(--surface);
 }
 .member-sidebar.kv-docked-panel { width: 300px; }
-.kv-panel-head { display: flex; align-items: center; justify-content: space-between; }
+.kv-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.kv-panel-head-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+}
 @media (max-width: 1100px) {
   .kv-docked-panel {
     display: flex !important;
     flex-direction: column !important;
     position: fixed !important;
     inset: 0 0 0 auto !important;
-    width: min(100vw, 360px) !important;
+    width: min(86vw, 360px) !important;
     z-index: 70 !important;
     box-shadow: -12px 0 36px rgba(0, 0, 0, 0.7) !important;
     background: var(--surface) !important;
     animation: drawerSlide 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  }
+
+  .wallet-back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--line);
+    color: var(--fg);
+    font-size: 13px;
+    font-weight: 600;
+    padding: 0 10px;
+    height: 38px;
+    border-radius: 8px;
+    cursor: pointer;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    transition: all 0.15s ease;
+    flex-shrink: 0;
+  }
+  .wallet-back-btn:active {
+    background: rgba(45, 212, 191, 0.2);
+    border-color: var(--accent);
+    color: var(--accent);
+    transform: scale(0.96);
+  }
+
+  .wallet-close-btn {
+    width: 42px;
+    height: 42px;
+    min-width: 42px;
+    min-height: 42px;
+    font-size: 18px;
+    border-radius: 10px;
   }
 }
 
