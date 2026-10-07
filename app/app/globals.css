@@ -1520,6 +1520,36 @@ html, body {
     opacity: 1;
     pointer-events: auto;
   }
+
+  .chat-input-container {
+    padding: 10px 12px;
+    padding-bottom: max(12px, env(safe-area-inset-bottom, 12px));
+  }
+
+  .chat-header {
+    padding: 0 10px;
+    gap: 8px;
+  }
+
+  .chat-header-actions {
+    gap: 6px;
+  }
+
+  .stellar-network-badge {
+    margin-left: 6px;
+    padding: 2px 8px;
+    font-size: 10px;
+  }
+
+  @media (max-width: 480px) {
+    .stellar-badge-text {
+      display: none;
+    }
+    .stellar-network-badge {
+      padding: 4px;
+      margin-left: 4px;
+    }
+  }
 }
 
 /* ==========================================================================

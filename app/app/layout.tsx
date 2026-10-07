@@ -3,15 +3,26 @@ import './globals.css';
 import { CoreProviders } from '../components/CoreProviders';
 
 export const metadata: Metadata = {
-  title: 'Kosmovia · Comunidades y Chat',
-  description: 'Plataforma de comunidades descentralizada para Stellar. Explora, conecta y pertenece.',
+  title: 'Kosmovia · Comunidades y Pagos Stellar',
+  description: 'Plataforma de comunidades con wallet y pagos USDC integrados en Stellar para creadores, comunidades y empresas.',
+  manifest: '/manifest.webmanifest',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'Kosmovia',
+  },
+  icons: {
+    icon: '/icon.png',
+    apple: '/icon-192.png',
+  },
 };
 
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
-  themeColor: '#07060f',
+  viewportFit: 'cover',
+  themeColor: '#061314',
 };
 
 export default function RootLayout({
