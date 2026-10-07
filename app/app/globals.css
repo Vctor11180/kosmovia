@@ -1472,7 +1472,7 @@ html, body {
     display: none;
   }
 
-  .member-sidebar {
+  .member-sidebar:not(.kv-docked-panel) {
     display: none;
   }
 
@@ -1519,6 +1519,13 @@ html, body {
   .mobile-open .mobile-backdrop {
     opacity: 1;
     pointer-events: auto;
+  }
+
+  .mobile-right-backdrop {
+    display: block !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    z-index: 55 !important;
   }
 
   .chat-input-container {
@@ -2902,7 +2909,17 @@ html, body {
   }
 }
 @media (max-width: 768px) {
-  .kv-docked-panel { position: fixed; inset: 0 0 0 auto; width: min(100vw, 380px); z-index: 60; }
+  .kv-docked-panel {
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    inset: 0 0 0 auto;
+    width: min(100vw, 360px);
+    z-index: 60;
+    box-shadow: -12px 0 36px rgba(0, 0, 0, 0.7);
+    background: var(--surface);
+    animation: drawerSlide 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  }
 }
 
 /* Logo de Kosmovia (provisorio) */

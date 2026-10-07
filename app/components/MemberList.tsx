@@ -9,9 +9,11 @@ interface MemberListProps {
   isOpen: boolean;
   /** Abre la tarjeta de perfil del miembro. */
   onOpenProfile?: (user: User) => void;
+  /** Cierra el panel de miembros. */
+  onClose?: () => void;
 }
 
-export function MemberList({ members, isOpen, onOpenProfile }: MemberListProps) {
+export function MemberList({ members, isOpen, onOpenProfile, onClose }: MemberListProps) {
   // Cada fila abre el perfil, con mouse o teclado.
   const open = (member: User) => ({
     role: 'button' as const,
@@ -32,7 +34,18 @@ export function MemberList({ members, isOpen, onOpenProfile }: MemberListProps) 
   const offlineMembers = members.filter((m) => !m.isOnline);
 
   return (
-    <aside className="member-sidebar" aria-label="Miembros de la comunidad">
+    <aside className="member-sidebar kv-docked-panel" aria-label="Miembros de la comunidad">
+      <div className="kv-panel-head" style={{ padding: '14px 16px 8px' }}>
+        <span className="member-section-header" style={{ padding: 0, margin: 0 }}>
+          Miembros ({members.length})
+        </span>
+        {onClose ? (
+          <button type="button" className="wallet-close-btn" onClick={onClose} aria-label="Cerrar miembros">
+            ✕
+          </button>
+        ) : null}
+      </div>
+
       <div className="member-section-header">
         EN LÍNEA — {onlineMembers.length}
       </div>

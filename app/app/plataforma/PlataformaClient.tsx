@@ -580,10 +580,19 @@ export function PlataformaPage() {
         activeChannelId={activeChannel.id}
         onSelectChannel={handleSelectChannel}
         currentUser={currentUser}
-        onOpenProfile={() => setIsProfileModalOpen(true)}
-        onOpenCreateChannel={() => setIsCreateChannelOpen(true)}
+        onOpenProfile={() => {
+          setIsMobileOpen(false);
+          setIsProfileModalOpen(true);
+        }}
+        onOpenCreateChannel={() => {
+          setIsMobileOpen(false);
+          setIsCreateChannelOpen(true);
+        }}
         isOwner={isCommunityOwner}
-        onOpenSettings={() => setIsCommunitySettingsOpen(true)}
+        onOpenSettings={() => {
+          setIsMobileOpen(false);
+          setIsCommunitySettingsOpen(true);
+        }}
         onNotice={(text) => setPayNotice({ kind: 'ok', text })}
       />
 
@@ -614,10 +623,19 @@ export function PlataformaPage() {
         onPayInvoice={handlePayInvoice}
       />
 
+      {rightPanel !== null ? (
+        <div
+          className="mobile-backdrop mobile-right-backdrop"
+          onClick={() => setRightPanel(null)}
+          aria-hidden="true"
+        />
+      ) : null}
+
       <MemberList
         members={currentMembers}
         isOpen={isMemberListOpen}
         onOpenProfile={setProfileCardUser}
+        onClose={() => setRightPanel(null)}
       />
 
       {rightPanel === 'notifications' ? (
