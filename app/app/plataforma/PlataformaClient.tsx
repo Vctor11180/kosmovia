@@ -37,8 +37,11 @@ export function PlataformaPage() {
   const [activeChannelId, setActiveChannelId] = useState<string>('chan-1');
   const [messagesByChannel, setMessagesByChannel] = useState<Record<string, Message[]>>(INITIAL_MESSAGES);
   const [isMobileOpen, setIsMobileOpen] = useState<boolean>(false);
-  // Panel derecho: Miembros, Mi Wallet o Notificaciones, uno a la vez y fijo (no tapa el chat).
-  const [rightPanel, setRightPanel] = useState<'members' | 'wallet' | 'notifications' | null>('members');
+  // Panel derecho: Miembros, Mi Wallet o Notificaciones, uno a la vez y fijo (en móvil arranca cerrado).
+  const [rightPanel, setRightPanel] = useState<'members' | 'wallet' | 'notifications' | null>(() => {
+    if (typeof window !== 'undefined' && window.innerWidth < 1200) return null;
+    return 'members';
+  });
   const togglePanel = (panel: 'members' | 'wallet' | 'notifications') =>
     setRightPanel((prev) => (prev === panel ? null : panel));
   const isMemberListOpen = rightPanel === 'members';
