@@ -1,34 +1,22 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import Link from 'next/link';
 import { KosmoviaCosmicBanner } from '../components/KosmoviaCosmicBanner';
 
 export default function LandingPage() {
-  const [backgroundMode, setBackgroundMode] = useState<'showcase' | 'hero'>('showcase');
-
   return (
-    <div className={`landing-wrapper ${backgroundMode === 'hero' ? 'immersive-bg-active' : ''}`}>
-      {/* Fondo Inmersivo Cósmico Opcional */}
-      {backgroundMode === 'hero' && (
-        <KosmoviaCosmicBanner mode="hero" showControls={false} />
-      )}
+    <div className="landing-wrapper" style={{ position: 'relative', minHeight: '100vh', overflowX: 'hidden' }}>
+      {/* 1. Fondo Cósmico Animado (Canvas 60FPS + Artwork Oficial, 100% no-bloqueante) */}
+      <KosmoviaCosmicBanner />
 
+      {/* 2. Barra de Navegación */}
       <header className="landing-nav" style={{ position: 'relative', zIndex: 10 }}>
         <Link href="/" className="landing-brand">
           <span className="landing-brand-logo">🌌</span>
           <span>Kosmovia</span>
         </Link>
         <div className="landing-nav-actions">
-          <button
-            type="button"
-            onClick={() => setBackgroundMode((m) => (m === 'showcase' ? 'hero' : 'showcase'))}
-            className="btn-nav-login"
-            title="Alternar entre modo banner 16:9 y fondo cósmico completo"
-            style={{ cursor: 'pointer' }}
-          >
-            {backgroundMode === 'showcase' ? '🌌 Modo Fondo Cósmico' : '🖼️ Modo Banner 16:9'}
-          </button>
           <Link href="/login" className="btn-nav-login">
             Iniciar Sesión
           </Link>
@@ -38,6 +26,7 @@ export default function LandingPage() {
         </div>
       </header>
 
+      {/* 3. Hero Section */}
       <main className="landing-hero" style={{ position: 'relative', zIndex: 10 }}>
         <div className="landing-tag-badge">
           <span>🇧🇴 Stellar Elite Bolivia · Infraestructura B2B</span>
@@ -53,6 +42,20 @@ export default function LandingPage() {
           cobros instantáneos en USDC sin comisiones abusivas y validación de identidad KYC empresarial.
         </p>
 
+        {/* Badges de Telemetría de Red Stellar */}
+        <div className="landing-telemetry-strip">
+          <div className="telemetry-pill">
+            <span className="telemetry-dot" />
+            <span>Stellar Horizon · Testnet</span>
+          </div>
+          <div className="telemetry-pill">
+            <span>⚡ Finalidad 3.5s · 0 Gas Pollar</span>
+          </div>
+          <div className="telemetry-pill">
+            <span>🛡️ Billeteras Passkeys No Custodia</span>
+          </div>
+        </div>
+
         <div className="landing-cta-row">
           <Link href="/login" className="btn-cta-main">
             Ingresar a Kosmovia
@@ -61,21 +64,9 @@ export default function LandingPage() {
             Ver Demo de Comunidades →
           </Link>
         </div>
-
-        {/* Banner Cósmico Interactivo Oficial (Modo Tarjeta 16:9 Showcase) */}
-        {backgroundMode === 'showcase' && (
-          <section className="landing-banner-section" aria-label="Banner animado interactivo oficial">
-            <KosmoviaCosmicBanner
-              mode="showcase"
-              showControls={true}
-              onExploreClick={() => {
-                window.location.href = '/plataforma';
-              }}
-            />
-          </section>
-        )}
       </main>
 
+      {/* 4. Tarjetas de Características */}
       <section className="landing-grid" aria-label="Características de la plataforma" style={{ position: 'relative', zIndex: 10 }}>
         <article className="landing-card">
           <div className="landing-card-icon">⚡</div>
@@ -102,6 +93,7 @@ export default function LandingPage() {
         </article>
       </section>
 
+      {/* 5. Footer */}
       <footer className="landing-footer" style={{ position: 'relative', zIndex: 10 }}>
         <p>
           Kosmovia © 2026 · Construido en el programa Stellar Elite Bolivia (TechRebel) · Testnet

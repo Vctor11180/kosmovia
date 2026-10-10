@@ -2182,489 +2182,110 @@ html, body {
 }
 
 /* ==========================================================================
-   KOSMOVIA COSMIC ANIMATED BANNER (Paleta Turquesa / Negro / 3D Celestial)
+   KOSMOVIA COSMIC ANIMATED BACKGROUND (Non-blocking, 60FPS Ambient)
    ========================================================================== */
 
-.kosmo-cosmic-banner {
-  position: relative;
-  overflow: hidden;
-  background-color: #061314;
-  color: #f2fbfa;
-  user-select: none;
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-/* Modo Showcase: Banner tipo tarjeta panorámica 16:9 */
-.kosmo-cosmic-banner.showcase {
-  width: 100%;
-  max-width: 1040px;
-  margin: 0 auto 48px;
-  min-height: 420px;
-  border-radius: 20px;
-  border: 1px solid rgba(45, 212, 191, 0.28);
-  box-shadow:
-    0 20px 50px -15px rgba(6, 19, 20, 0.95),
-    0 0 35px -10px rgba(45, 212, 191, 0.22);
-}
-
-/* Modo Hero: Fondo interactivo completo detrás del hero */
-.kosmo-cosmic-banner.hero {
+.kosmo-cosmic-bg-layer {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
+  overflow: hidden;
+  pointer-events: none;
   z-index: 0;
-  pointer-events: auto;
+  user-select: none;
 }
 
-/* Modo Minimal */
-.kosmo-cosmic-banner.minimal {
-  width: 100%;
-  min-height: 260px;
-  border-radius: 14px;
-}
-
-/* Modo Pantalla Completa Inmersiva */
-.kosmo-cosmic-banner.fullscreen-mode {
-  position: fixed !important;
-  inset: 0 !important;
-  width: 100vw !important;
-  height: 100vh !important;
-  max-width: none !important;
-  margin: 0 !important;
-  border-radius: 0 !important;
-  z-index: 99999 !important;
-}
-
-/* 1. Backdrop oficial con drift */
-.kosmo-banner-backdrop {
+.kosmo-art-backdrop-wrap {
   position: absolute;
   inset: 0;
   overflow: hidden;
   pointer-events: none;
-  z-index: 1;
 }
 
-.kosmo-banner-img {
+.kosmo-art-backdrop-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: center;
-  opacity: 0.52;
-  filter: saturate(1.15) contrast(1.12);
-  transform: scale(1.02);
-  animation: kosmoKenBurns 34s ease-in-out infinite alternate;
+  object-position: center top;
+  opacity: 0.38;
+  filter: saturate(1.2) contrast(1.15);
+  animation: kosmoKenBurns 36s ease-in-out infinite alternate;
 }
 
 @keyframes kosmoKenBurns {
   0% {
-    transform: scale(1.02) translate(0, 0);
-  }
-  50% {
-    transform: scale(1.08) translate(-1.2%, -0.8%);
+    transform: scale(1.02);
   }
   100% {
-    transform: scale(1.04) translate(1%, 0.6%);
+    transform: scale(1.08) translate(-1%, -0.5%);
   }
 }
 
-.kosmo-banner-nebula-pulse {
+.kosmo-art-backdrop-glow {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(circle at 75% 45%, rgba(45, 212, 191, 0.25) 0%, transparent 55%),
-    radial-gradient(circle at 20% 65%, rgba(20, 184, 166, 0.18) 0%, transparent 60%);
+    radial-gradient(circle at 75% 35%, rgba(45, 212, 191, 0.22) 0%, transparent 60%),
+    radial-gradient(circle at 25% 65%, rgba(20, 184, 166, 0.15) 0%, transparent 65%);
   mix-blend-mode: screen;
-  animation: kosmoAtmosphereBreath 9s ease-in-out infinite alternate;
 }
 
-.kosmo-banner-vignette {
+.kosmo-art-backdrop-vignette {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(ellipse at center, transparent 40%, rgba(6, 19, 20, 0.75) 100%),
-    linear-gradient(to bottom, rgba(6, 19, 20, 0.3) 0%, transparent 30%, transparent 70%, #061314 100%);
+    radial-gradient(ellipse at center, transparent 35%, rgba(6, 19, 20, 0.7) 100%),
+    linear-gradient(to bottom, rgba(6, 19, 20, 0.5) 0%, transparent 20%, transparent 65%, #061314 100%);
 }
 
-/* 2. Canvas interactivo */
-.kosmo-banner-canvas {
+.kosmo-cosmic-bg-canvas {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
-  z-index: 2;
   pointer-events: none;
+  z-index: 1;
 }
 
-/* 3. Escenario celestial planetario 3D */
-.kosmo-celestial-stage {
-  position: absolute;
-  right: 10%;
-  top: 50%;
-  transform: translateY(-50%);
-  pointer-events: none;
-  z-index: 3;
-}
-
-.kosmo-celestial-orbit-system {
-  position: relative;
-  width: 220px;
-  height: 220px;
+/* Telemetry Pills Strip for Landing */
+.landing-telemetry-strip {
   display: flex;
   align-items: center;
   justify-content: center;
-  perspective: 800px;
-  transform-style: preserve-3d;
-}
-
-/* Anillos Orbitales en 3D */
-.kosmo-orbit-ring {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  border-radius: 50%;
-  transform-style: preserve-3d;
-  pointer-events: none;
-}
-
-.kosmo-orbit-ring.outer-ring {
-  width: 330px;
-  height: 330px;
-  margin-top: -165px;
-  margin-left: -165px;
-  border: 1.5px dashed rgba(45, 212, 191, 0.45);
-  box-shadow: 0 0 20px rgba(45, 212, 191, 0.15);
-  transform: rotateX(74deg) rotateY(-18deg) rotateZ(0deg);
-  animation: kosmoOrbitSpin 36s linear infinite;
-}
-
-.kosmo-orbit-ring.inner-ring {
-  width: 260px;
-  height: 260px;
-  margin-top: -130px;
-  margin-left: -130px;
-  border: 1.5px solid rgba(94, 234, 212, 0.55);
-  box-shadow: inset 0 0 15px rgba(94, 234, 212, 0.2);
-  transform: rotateX(74deg) rotateY(-18deg) rotateZ(180deg);
-  animation: kosmoOrbitSpinReverse 22s linear infinite;
-}
-
-@keyframes kosmoOrbitSpin {
-  from {
-    transform: rotateX(74deg) rotateY(-18deg) rotateZ(0deg);
-  }
-  to {
-    transform: rotateX(74deg) rotateY(-18deg) rotateZ(360deg);
-  }
-}
-
-@keyframes kosmoOrbitSpinReverse {
-  from {
-    transform: rotateX(74deg) rotateY(-18deg) rotateZ(360deg);
-  }
-  to {
-    transform: rotateX(74deg) rotateY(-18deg) rotateZ(0deg);
-  }
-}
-
-.kosmo-orbit-satellite {
-  position: absolute;
-  top: 0;
-  left: 50%;
-  transform: translate(-50%, -50%) rotateX(-74deg);
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-
-.sat-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: #5eead4;
-  box-shadow:
-    0 0 10px #5eead4,
-    0 0 20px rgba(45, 212, 191, 0.8);
-  animation: kosmoDotPulse 2s ease-in-out infinite;
-}
-
-.sat-label {
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 0.05em;
-  color: #f2fbfa;
-  background: rgba(11, 31, 33, 0.88);
-  border: 1px solid rgba(45, 212, 191, 0.45);
-  padding: 2px 7px;
-  border-radius: 6px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
-  white-space: nowrap;
-}
-
-/* Esfera Planetaria */
-.kosmo-planet-sphere {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 160px;
-  height: 160px;
-  margin-top: -80px;
-  margin-left: -80px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 32% 32%, #14b8a6 0%, #0b1f21 55%, #061314 90%);
-  box-shadow:
-    inset -22px -22px 42px rgba(6, 19, 20, 0.98),
-    0 0 50px rgba(45, 212, 191, 0.45),
-    0 0 100px rgba(20, 184, 166, 0.2);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-}
-
-.kosmo-planet-atmosphere {
-  position: absolute;
-  inset: -6px;
-  border-radius: 50%;
-  border: 2px solid rgba(94, 234, 212, 0.4);
-  filter: blur(3px);
-  animation: kosmoAtmosphereBreath 6s ease-in-out infinite alternate;
-}
-
-.kosmo-planet-core-glow {
-  position: absolute;
-  inset: 15%;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(94, 234, 212, 0.25) 0%, transparent 70%);
-}
-
-.kosmo-planet-emblem {
-  position: relative;
-  z-index: 2;
-  width: 48px;
-  height: 48px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  filter: drop-shadow(0 0 12px #5eead4);
-  animation: kosmoEmblemPulse 4s ease-in-out infinite alternate;
-}
-
-.kosmo-emblem-svg {
-  width: 100%;
-  height: 100%;
-}
-
-@keyframes kosmoAtmosphereBreath {
-  0% {
-    opacity: 0.65;
-    transform: scale(0.98);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1.03);
-  }
-}
-
-@keyframes kosmoEmblemPulse {
-  0% {
-    transform: scale(0.95);
-    filter: drop-shadow(0 0 8px rgba(94, 234, 212, 0.6));
-  }
-  100% {
-    transform: scale(1.05);
-    filter: drop-shadow(0 0 18px #5eead4);
-  }
-}
-
-/* 4. HUD Telemetría */
-.kosmo-banner-hud-overlay {
-  position: absolute;
-  inset: 0;
-  z-index: 4;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  padding: 24px;
-  pointer-events: none;
-}
-
-.kosmo-hud-top {
-  display: flex;
-  align-items: center;
   gap: 12px;
   flex-wrap: wrap;
+  margin: -10px auto 36px;
+  max-width: 860px;
 }
 
-.kosmo-hud-badge {
+.telemetry-pill {
   display: inline-flex;
   align-items: center;
   gap: 7px;
   padding: 6px 14px;
-  background: rgba(11, 31, 33, 0.82);
-  border: 1px solid rgba(45, 212, 191, 0.3);
+  background: rgba(11, 31, 33, 0.78);
+  border: 1px solid rgba(45, 212, 191, 0.25);
   border-radius: 999px;
   font-size: 12px;
   font-weight: 600;
   color: #f2fbfa;
   backdrop-filter: blur(8px);
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  transition: all 0.2s ease;
 }
 
-.hud-pulse-dot {
+.telemetry-pill:hover {
+  border-color: #2dd4bf;
+  transform: translateY(-1px);
+}
+
+.telemetry-dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
   background: #2dd4bf;
-  box-shadow: 0 0 10px #2dd4bf;
-  animation: kosmoDotPulse 1.8s ease-in-out infinite;
-}
-
-@keyframes kosmoDotPulse {
-  0%, 100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.45;
-    transform: scale(0.85);
-  }
-}
-
-/* Información central para modo showcase */
-.kosmo-showcase-center-info {
-  max-width: 520px;
-  margin: auto 0;
-  padding: 12px 0;
-  pointer-events: auto;
-}
-
-.kosmo-showcase-subtitle {
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.16em;
-  color: #2dd4bf;
-  text-transform: uppercase;
-  display: block;
-  margin-bottom: 8px;
-  text-shadow: 0 0 12px rgba(45, 212, 191, 0.4);
-}
-
-.kosmo-showcase-title {
-  font-size: clamp(34px, 5vw, 52px);
-  font-weight: 900;
-  letter-spacing: -0.03em;
-  line-height: 1.05;
-  margin: 0 0 14px;
-  color: #f2fbfa;
-  text-shadow: 0 0 24px rgba(94, 234, 212, 0.35);
-}
-
-.kosmo-showcase-caption {
-  font-size: 14px;
-  line-height: 1.55;
-  color: #8fb3b0;
-  margin: 0;
-}
-
-/* 5. Barra de Controles */
-.kosmo-banner-controls {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-  pointer-events: auto;
-}
-
-.kosmo-ctrl-btn {
-  background: rgba(11, 31, 33, 0.88);
-  border: 1px solid rgba(45, 212, 191, 0.32);
-  color: #f2fbfa;
-  padding: 8px 14px;
-  border-radius: 10px;
-  font-size: 12px;
-  font-weight: 700;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  backdrop-filter: blur(8px);
-}
-
-.kosmo-ctrl-btn:hover {
-  background: rgba(20, 50, 53, 0.95);
-  border-color: #5eead4;
-  color: #5eead4;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 16px rgba(45, 212, 191, 0.3);
-}
-
-.kosmo-ctrl-btn.active {
-  background: rgba(45, 212, 191, 0.18);
-  border-color: #2dd4bf;
-  color: #2dd4bf;
-  box-shadow: 0 0 16px rgba(45, 212, 191, 0.3);
-}
-
-.kosmo-ctrl-btn.primary {
-  background: #2dd4bf;
-  color: #061314;
-  border-color: #2dd4bf;
-  font-weight: 800;
-  box-shadow: 0 0 18px rgba(45, 212, 191, 0.45);
-}
-
-.kosmo-ctrl-btn.primary:hover {
-  background: #5eead4;
-  color: #061314;
-  box-shadow: 0 0 24px rgba(94, 234, 212, 0.6);
-}
-
-/* Indicador sutil de interacción */
-.kosmo-banner-interactive-hint {
-  position: absolute;
-  bottom: 12px;
-  right: 20px;
-  font-size: 11px;
-  font-weight: 500;
-  color: #8fb3b0;
-  opacity: 0.65;
-  pointer-events: none;
-  z-index: 4;
-}
-
-/* Responsive para dispositivos móviles */
-@media (max-width: 768px) {
-  .kosmo-cosmic-banner.showcase {
-    min-height: 480px;
-    border-radius: 16px;
-    margin-bottom: 32px;
-  }
-
-  .kosmo-celestial-stage {
-    right: 50%;
-    top: 30%;
-    transform: translate(50%, -50%) scale(0.75);
-    opacity: 0.85;
-  }
-
-  .kosmo-showcase-center-info {
-    margin-top: 130px;
-    text-align: center;
-  }
-
-  .kosmo-hud-top {
-    justify-content: center;
-  }
-
-  .kosmo-banner-controls {
-    justify-content: center;
-  }
-
-  .kosmo-banner-interactive-hint {
-    display: none;
-  }
+  box-shadow: 0 0 8px #2dd4bf;
 }
 
 /* ==========================================================================
