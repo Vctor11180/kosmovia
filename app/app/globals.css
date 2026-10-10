@@ -2251,70 +2251,71 @@ html, body {
   position: relative;
 }
 
-/* El Escenario Cósmico 3D en Grande */
-.kosmo-cosmic-stage {
+/* ==========================================================================
+   KOSMOVIA NETWORK & SPACE SIMULATION STAGE
+   ========================================================================== */
+
+.kosmo-network-sim-stage {
   position: relative;
   width: 100%;
-  height: 480px;
+  height: 520px;
   border-radius: 24px;
   background-color: #061314;
-  border: 1px solid rgba(45, 212, 191, 0.28);
+  border: 1px solid rgba(45, 212, 191, 0.32);
   box-shadow:
     0 24px 60px -15px rgba(6, 19, 20, 0.95),
-    0 0 45px -10px rgba(45, 212, 191, 0.22);
+    0 0 50px -10px rgba(45, 212, 191, 0.25);
   overflow: hidden;
   user-select: none;
   cursor: crosshair;
   transition: border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
-.kosmo-cosmic-stage:hover {
-  border-color: rgba(94, 234, 212, 0.45);
+.kosmo-network-sim-stage:hover {
+  border-color: rgba(94, 234, 212, 0.55);
   box-shadow:
     0 24px 60px -15px rgba(6, 19, 20, 0.95),
-    0 0 55px -5px rgba(45, 212, 191, 0.35);
+    0 0 65px -5px rgba(45, 212, 191, 0.38);
 }
 
-/* 1. Backdrop del arte */
-.stage-artwork-backdrop {
+/* 1. Backdrop Galáctico */
+.sim-backdrop-galaxy {
   position: absolute;
   inset: 0;
   pointer-events: none;
   overflow: hidden;
 }
 
-.stage-artwork-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  opacity: 0.35;
-  filter: saturate(1.15) contrast(1.1);
-  transform: scale(1.02);
-  animation: stageKenBurns 32s ease-in-out infinite alternate;
-}
-
-@keyframes stageKenBurns {
-  0% { transform: scale(1.02); }
-  100% { transform: scale(1.08) translate(-1%, -0.5%); }
-}
-
-.stage-nebula-glow {
+.sim-nebula-pulse-1 {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(circle at 65% 45%, rgba(45, 212, 191, 0.25) 0%, transparent 60%),
-    radial-gradient(circle at 25% 65%, rgba(20, 184, 166, 0.18) 0%, transparent 65%);
+    radial-gradient(circle at 75% 35%, rgba(45, 212, 191, 0.2) 0%, transparent 60%),
+    radial-gradient(circle at 25% 65%, rgba(20, 184, 166, 0.16) 0%, transparent 65%);
+  mix-blend-mode: screen;
+  animation: simNebulaDrift 28s ease-in-out infinite alternate;
+}
+
+.sim-nebula-pulse-2 {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 50%, rgba(56, 189, 248, 0.12) 0%, transparent 55%);
   mix-blend-mode: screen;
 }
 
-.stage-vignette-radial {
+@keyframes simNebulaDrift {
+  0% { transform: scale(1) translate(0, 0); }
+  100% { transform: scale(1.08) translate(-1.5%, -1%); }
+}
+
+.sim-vignette-radial {
   position: absolute;
   inset: 0;
-  background: radial-gradient(ellipse at center, transparent 30%, rgba(6, 19, 20, 0.8) 100%);
+  background: radial-gradient(ellipse at center, transparent 35%, rgba(6, 19, 20, 0.85) 100%);
 }
 
 /* 2. Canvas */
-.stage-canvas-layer {
+.sim-canvas-layer {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -2323,184 +2324,63 @@ html, body {
   z-index: 2;
 }
 
-/* 3. Sistema Celestial 3D */
-.stage-celestial-system {
+/* 3. Tooltip Holográfico Interactivo */
+.sim-node-tooltip {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 260px;
-  height: 260px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  perspective: 900px;
-  transform-style: preserve-3d;
+  transform: translate(-50%, -100%);
+  padding: 8px 14px;
+  background: rgba(11, 31, 33, 0.94);
+  border: 1px solid rgba(94, 234, 212, 0.45);
+  border-radius: 12px;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.7), 0 0 16px rgba(45, 212, 191, 0.25);
   pointer-events: none;
-  z-index: 3;
-}
-
-.stage-orbit-ring {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  border-radius: 50%;
-  transform-style: preserve-3d;
-}
-
-.stage-orbit-ring.outer-orbit {
-  width: 380px;
-  height: 380px;
-  margin-top: -190px;
-  margin-left: -190px;
-  border: 1.5px dashed rgba(45, 212, 191, 0.4);
-  box-shadow: 0 0 20px rgba(45, 212, 191, 0.15);
-  transform: rotateX(72deg) rotateY(-18deg) rotateZ(0deg);
-  animation: stageOrbitSpin 34s linear infinite;
-}
-
-.stage-orbit-ring.mid-orbit {
-  width: 300px;
-  height: 300px;
-  margin-top: -150px;
-  margin-left: -150px;
-  border: 1.5px solid rgba(94, 234, 212, 0.5);
-  box-shadow: inset 0 0 16px rgba(94, 234, 212, 0.2);
-  transform: rotateX(72deg) rotateY(-18deg) rotateZ(120deg);
-  animation: stageOrbitSpinReverse 24s linear infinite;
-}
-
-.stage-orbit-ring.inner-orbit {
-  width: 230px;
-  height: 230px;
-  margin-top: -115px;
-  margin-left: -115px;
-  border: 1px dashed rgba(20, 184, 166, 0.45);
-  transform: rotateX(72deg) rotateY(-18deg) rotateZ(240deg);
-  animation: stageOrbitSpin 18s linear infinite;
-}
-
-@keyframes stageOrbitSpin {
-  from { transform: rotateX(72deg) rotateY(-18deg) rotateZ(0deg); }
-  to { transform: rotateX(72deg) rotateY(-18deg) rotateZ(360deg); }
-}
-
-@keyframes stageOrbitSpinReverse {
-  from { transform: rotateX(72deg) rotateY(-18deg) rotateZ(360deg); }
-  to { transform: rotateX(72deg) rotateY(-18deg) rotateZ(0deg); }
-}
-
-.stage-orbit-node {
-  position: absolute;
-  top: 0;
-  left: 50%;
-  transform: translate(-50%, -50%) rotateX(-72deg);
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-
-.node-glow-dot {
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  background: #5eead4;
-  box-shadow: 0 0 12px #5eead4, 0 0 20px rgba(45, 212, 191, 0.8);
-  animation: nodePulse 2s ease-in-out infinite;
-}
-
-.node-glow-dot.cyan {
-  background: #38bdf8;
-  box-shadow: 0 0 12px #38bdf8;
-}
-
-.node-badge {
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  color: #f2fbfa;
-  background: rgba(11, 31, 33, 0.9);
-  border: 1px solid rgba(45, 212, 191, 0.4);
-  padding: 2px 7px;
-  border-radius: 6px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+  z-index: 10;
   white-space: nowrap;
+  animation: simTooltipIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-@keyframes nodePulse {
-  0%, 100% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(0.85); opacity: 0.65; }
+@keyframes simTooltipIn {
+  from { opacity: 0; transform: translate(-50%, -90%); }
+  to { opacity: 1; transform: translate(-50%, -100%); }
 }
 
-/* Planeta Central */
-.stage-planet-sphere {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 140px;
-  height: 140px;
-  margin-top: -70px;
-  margin-left: -70px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 32% 32%, #14b8a6 0%, #0b1f21 55%, #061314 90%);
-  box-shadow:
-    inset -18px -18px 36px rgba(6, 19, 20, 0.98),
-    0 0 45px rgba(45, 212, 191, 0.45),
-    0 0 90px rgba(20, 184, 166, 0.2);
+.tooltip-header {
   display: flex;
   align-items: center;
-  justify-content: center;
-  overflow: hidden;
+  gap: 6px;
+  margin-bottom: 2px;
 }
 
-.stage-planet-atmosphere {
-  position: absolute;
-  inset: -6px;
+.tooltip-dot {
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
-  border: 2px solid rgba(94, 234, 212, 0.4);
-  filter: blur(3px);
-  animation: atmosphereBreath 6s ease-in-out infinite alternate;
+  box-shadow: 0 0 8px currentColor;
 }
 
-.stage-planet-core-light {
-  position: absolute;
-  inset: 15%;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(94, 234, 212, 0.25) 0%, transparent 70%);
+.tooltip-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #f2fbfa;
 }
 
-.stage-planet-emblem {
-  position: relative;
-  z-index: 2;
-  width: 44px;
-  height: 44px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  filter: drop-shadow(0 0 12px #5eead4);
-  animation: emblemPulse 4s ease-in-out infinite alternate;
+.tooltip-desc {
+  font-size: 11px;
+  color: #2dd4bf;
+  margin-bottom: 3px;
 }
 
-.stage-emblem-svg {
-  width: 100%;
-  height: 100%;
+.tooltip-status {
+  font-size: 10px;
+  color: #8fb3b0;
 }
 
-@keyframes atmosphereBreath {
-  0% { opacity: 0.65; transform: scale(0.98); }
-  100% { opacity: 1; transform: scale(1.03); }
-}
-
-@keyframes emblemPulse {
-  0% { transform: scale(0.95); filter: drop-shadow(0 0 8px rgba(94, 234, 212, 0.6)); }
-  100% { transform: scale(1.05); filter: drop-shadow(0 0 16px #5eead4); }
-}
-
-/* 4. HUD Telemetría */
-.stage-hud-overlay {
+/* 4. Telemetría HUD de Simulación */
+.sim-hud-overlay {
   position: absolute;
   inset: 0;
-  padding: 16px;
+  padding: 18px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -2508,39 +2388,53 @@ html, body {
   z-index: 4;
 }
 
-.stage-hud-row {
+.sim-hud-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
-.stage-hud-pill {
+.sim-hud-badge {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 5px 12px;
-  background: rgba(11, 31, 33, 0.85);
-  border: 1px solid rgba(45, 212, 191, 0.28);
+  gap: 7px;
+  padding: 6px 14px;
+  background: rgba(11, 31, 33, 0.88);
+  border: 1px solid rgba(45, 212, 191, 0.3);
   border-radius: 999px;
   font-size: 11px;
   font-weight: 600;
   color: #f2fbfa;
   backdrop-filter: blur(8px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
 }
 
-.hud-status-dot {
+.hud-live-dot {
   width: 7px;
   height: 7px;
   border-radius: 50%;
   background: #2dd4bf;
-  box-shadow: 0 0 8px #2dd4bf;
+  box-shadow: 0 0 10px #2dd4bf;
+  animation: hudDotPulse 1.8s ease-in-out infinite;
 }
 
-.stage-hud-hint {
+@keyframes hudDotPulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(0.85); opacity: 0.55; }
+}
+
+.sim-hud-hint {
   font-size: 11px;
   color: #8fb3b0;
-  opacity: 0.7;
+  opacity: 0.75;
+}
+
+@media (max-width: 959px) {
+  .kosmo-network-sim-stage {
+    height: 420px;
+  }
 }
 
 /* Telemetry Pills Strip for Landing */
