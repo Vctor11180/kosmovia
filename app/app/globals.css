@@ -1957,10 +1957,14 @@ html, body {
 .landing-wrapper {
   min-height: 100vh;
   background:
-    radial-gradient(1000px 500px at 50% -5%, rgba(0, 242, 254, 0.12) 0%, transparent 65%),
-    var(--bg);
+    radial-gradient(1200px 600px at 50% -10%, rgba(45, 212, 191, 0.22) 0%, transparent 70%),
+    radial-gradient(900px 500px at 85% 35%, rgba(20, 184, 166, 0.16) 0%, transparent 65%),
+    radial-gradient(800px 400px at 15% 55%, rgba(56, 189, 248, 0.14) 0%, transparent 60%),
+    #061314;
   display: flex;
   flex-direction: column;
+  position: relative;
+  overflow-x: hidden;
 }
 
 .landing-nav {
@@ -2278,40 +2282,56 @@ html, body {
     0 0 65px -5px rgba(45, 212, 191, 0.38);
 }
 
-/* 1. Backdrop Galáctico */
-.sim-backdrop-galaxy {
+/* 1. Backdrop de Artwork Oficial con Nebulosas e Iluminación Estelar */
+.sim-artwork-backdrop {
   position: absolute;
   inset: 0;
   pointer-events: none;
   overflow: hidden;
+  z-index: 1;
 }
 
-.sim-nebula-pulse-1 {
+.sim-artwork-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.52;
+  filter: saturate(1.28) contrast(1.18) brightness(1.14);
+  transform: scale(1.02);
+  animation: simBackdropDrift 30s ease-in-out infinite alternate;
+}
+
+@keyframes simBackdropDrift {
+  0% { transform: scale(1.02) translate(0, 0); }
+  100% { transform: scale(1.08) translate(-1.2%, -0.8%); }
+}
+
+.sim-nebula-aurora-1 {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(circle at 75% 35%, rgba(45, 212, 191, 0.2) 0%, transparent 60%),
-    radial-gradient(circle at 25% 65%, rgba(20, 184, 166, 0.16) 0%, transparent 65%);
+    radial-gradient(circle at 72% 32%, rgba(94, 234, 212, 0.35) 0%, transparent 55%),
+    radial-gradient(circle at 22% 68%, rgba(20, 184, 166, 0.28) 0%, transparent 60%);
   mix-blend-mode: screen;
-  animation: simNebulaDrift 28s ease-in-out infinite alternate;
+  animation: simAuroraPulse 12s ease-in-out infinite alternate;
 }
 
-.sim-nebula-pulse-2 {
+.sim-nebula-aurora-2 {
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at 50% 50%, rgba(56, 189, 248, 0.12) 0%, transparent 55%);
+  background: radial-gradient(circle at 50% 50%, rgba(56, 189, 248, 0.22) 0%, transparent 55%);
   mix-blend-mode: screen;
 }
 
-@keyframes simNebulaDrift {
-  0% { transform: scale(1) translate(0, 0); }
-  100% { transform: scale(1.08) translate(-1.5%, -1%); }
+@keyframes simAuroraPulse {
+  0% { opacity: 0.75; transform: scale(1); }
+  100% { opacity: 1; transform: scale(1.03); }
 }
 
 .sim-vignette-radial {
   position: absolute;
   inset: 0;
-  background: radial-gradient(ellipse at center, transparent 35%, rgba(6, 19, 20, 0.85) 100%);
+  background: radial-gradient(ellipse at center, transparent 20%, rgba(6, 19, 20, 0.72) 80%, #061314 100%);
 }
 
 /* 2. Canvas */
