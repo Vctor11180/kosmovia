@@ -1,27 +1,50 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { usePollarStatus } from '../../lib/core/pollar.tsx';
 import { usePollarAuth } from '../../lib/core/usePollarAuth.ts';
 import { useCoreSession } from '../../components/CoreProviders';
+import { WarpLoginPortal } from '../../components/WarpLoginPortal';
 
 /**
  * Login real (modo api): Google, email o Freighter con Pollar, y la sesión
- * firmada con core. Mismo diseño que el login de demo de Victor.
+ * firmada con core. Con secuencia WarpLoginPortal sincronizada.
  */
 export function CoreLogin() {
   const pollar = usePollarStatus();
+  const [isWarping, setIsWarping] = useState(false);
+  const router = useRouter();
+
   return (
     <div className="login-page-container">
-      <div className="login-box">
+      <WarpLoginPortal
+        isWarping={isWarping}
+        username="@empresa"
+        onComplete={() => router.replace('/plataforma')}
+      />
+
+      <div
+        className="login-box"
+        style={{
+          opacity: isWarping ? 0 : 1,
+          transform: isWarping ? 'scale(0.92)' : 'scale(1)',
+          pointerEvents: isWarping ? 'none' : 'auto',
+        }}
+      >
         <div className="login-header">
-          <span className="login-brand-icon"><img src="/brand/kosmovia-logo.png" alt="" width={56} height={56} className="kv-brand-img" /></span>
+          <span className="login-brand-icon">
+            <img src="/brand/kosmovia-logo.png" alt="" width={56} height={56} className="kv-brand-img" />
+          </span>
           <h1 className="login-title">Ingresar a Kosmovia</h1>
           <p className="login-subtitle">Comunidades, canales y chat en Stellar</p>
         </div>
-        {pollar.configured ? <Buttons /> : <p className="form-hint">{pollar.message}</p>}
+        {pollar.configured ? (
+          <Buttons onStartWarp={() => setIsWarping(true)} isWarping={isWarping} />
+        ) : (
+          <p className="form-hint">{pollar.message}</p>
+        )}
         <Link href="/" className="login-back-link">
           ← Volver a la página principal
         </Link>
@@ -30,16 +53,17 @@ export function CoreLogin() {
   );
 }
 
-function Buttons() {
-  const router = useRouter();
+function Buttons({ onStartWarp, isWarping }: { onStartWarp: () => void; isWarping: boolean }) {
   const { isLoading, error, loginGoogle, loginEmail, loginFreighter } = usePollarAuth();
   const session = useCoreSession();
 
   useEffect(() => {
-    if (session.step === 'ready') router.replace('/plataforma');
-  }, [session.step, router]);
+    if (session.step === 'ready') {
+      onStartWarp();
+    }
+  }, [session.step, onStartWarp]);
 
-  const busy = isLoading || session.step === 'loading';
+  const busy = isLoading || session.step === 'loading' || isWarping;
   return (
     <div style={{ display: 'grid', gap: 12, marginBottom: 18 }}>
       <button type="button" className="btn-login-submit" onClick={loginGoogle} disabled={busy}>

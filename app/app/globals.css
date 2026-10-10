@@ -2624,6 +2624,242 @@ html, body {
 }
 
 /* ==========================================================================
+   WARP LOGIN PORTAL & HIPERESPACIO TRANSITION
+   ========================================================================== */
+
+.warp-portal-root {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.warp-portal-root.is-warping {
+  z-index: 999;
+  pointer-events: auto;
+}
+
+.warp-starfield-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* Modal HUD central durante el warp */
+.warp-hud-modal {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: radial-gradient(circle at center, rgba(6, 19, 20, 0.75) 0%, rgba(6, 19, 20, 0.94) 80%);
+  backdrop-filter: blur(12px);
+  z-index: 1000;
+  animation: warpHudFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes warpHudFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.warp-hud-core {
+  width: 100%;
+  max-width: 440px;
+  background: rgba(11, 31, 33, 0.94);
+  border: 1px solid rgba(45, 212, 191, 0.4);
+  border-radius: 24px;
+  padding: 36px 32px;
+  box-shadow:
+    0 24px 60px rgba(0, 0, 0, 0.85),
+    0 0 50px rgba(45, 212, 191, 0.25);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+/* Anillos orbitales holográficos */
+.warp-portal-rings {
+  position: relative;
+  width: 110px;
+  height: 110px;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.warp-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+}
+
+.warp-ring.outer {
+  border: 2px dashed rgba(45, 212, 191, 0.6);
+  animation: warpRingSpin 8s linear infinite;
+}
+
+.warp-ring.middle {
+  inset: 8px;
+  border: 1.5px solid rgba(94, 234, 212, 0.4);
+  box-shadow: inset 0 0 12px rgba(94, 234, 212, 0.2);
+  animation: warpRingSpinReverse 5s linear infinite;
+}
+
+.warp-ring.inner {
+  inset: 16px;
+  border: 1.5px dashed rgba(20, 184, 166, 0.7);
+  animation: warpRingSpin 3s linear infinite;
+}
+
+@keyframes warpRingSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes warpRingSpinReverse {
+  from { transform: rotate(360deg); }
+  to { transform: rotate(0deg); }
+}
+
+.warp-core-logo {
+  position: relative;
+  z-index: 2;
+  filter: drop-shadow(0 0 16px rgba(94, 234, 212, 0.7));
+  animation: warpLogoPulse 1.8s ease-in-out infinite alternate;
+}
+
+.warp-logo-img {
+  border-radius: 12px;
+}
+
+@keyframes warpLogoPulse {
+  0% { transform: scale(0.95); }
+  100% { transform: scale(1.05); }
+}
+
+/* Cabecera del HUD */
+.warp-hud-header {
+  margin-bottom: 24px;
+}
+
+.warp-hud-badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #2dd4bf;
+  margin-bottom: 6px;
+}
+
+.warp-hud-user {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #f2fbfa;
+  margin: 0;
+}
+
+/* Pasos de verificación */
+.warp-steps-list {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 28px;
+  text-align: left;
+}
+
+.warp-step-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  background: rgba(6, 19, 20, 0.5);
+  border: 1px solid rgba(45, 212, 191, 0.12);
+  color: #8fb3b0;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.25s ease;
+}
+
+.warp-step-item.current {
+  background: rgba(45, 212, 191, 0.1);
+  border-color: rgba(45, 212, 191, 0.35);
+  color: #f2fbfa;
+}
+
+.warp-step-item.done {
+  background: rgba(20, 184, 166, 0.12);
+  border-color: rgba(94, 234, 212, 0.4);
+  color: #5eead4;
+}
+
+.step-indicator {
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.step-pending-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(143, 179, 176, 0.4);
+}
+
+.step-spinner-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #2dd4bf;
+  box-shadow: 0 0 10px #2dd4bf;
+  animation: stepSpinnerPulse 0.8s ease-in-out infinite alternate;
+}
+
+@keyframes stepSpinnerPulse {
+  0% { transform: scale(0.8); opacity: 0.5; }
+  100% { transform: scale(1.2); opacity: 1; }
+}
+
+.step-label {
+  flex: 1;
+}
+
+/* Barra de progreso de salto */
+.warp-progress-track {
+  width: 100%;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(20, 50, 53, 0.6);
+  overflow: hidden;
+}
+
+.warp-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #14b8a6, #5eead4);
+  box-shadow: 0 0 12px #5eead4;
+  transition: width 0.35s ease;
+}
+
+/* ==========================================================================
    LOGIN / ACCESO STYLES
    ========================================================================== */
 
@@ -2634,20 +2870,25 @@ html, body {
   align-items: center;
   justify-content: center;
   padding: 20px;
-  background:
-    radial-gradient(800px 400px at 50% 20%, rgba(0, 242, 254, 0.1) 0%, transparent 70%),
-    var(--bg);
+  background: #061314;
+  position: relative;
+  overflow: hidden;
 }
 
 .login-box {
   width: 100%;
   max-width: 420px;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 18px;
-  padding: 32px 28px;
-  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.6);
+  background: rgba(11, 31, 33, 0.88);
+  border: 1px solid rgba(45, 212, 191, 0.28);
+  border-radius: 20px;
+  padding: 34px 28px;
+  box-shadow:
+    0 24px 60px rgba(0, 0, 0, 0.8),
+    0 0 35px rgba(45, 212, 191, 0.15);
   position: relative;
+  backdrop-filter: blur(16px);
+  z-index: 2;
+  transition: transform 0.3s ease, opacity 0.3s ease;
 }
 
 .login-header {
