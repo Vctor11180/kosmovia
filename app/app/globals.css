@@ -2052,6 +2052,15 @@ html, body {
   margin-bottom: 24px;
 }
 
+.tag-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent);
+  display: inline-block;
+}
+
 .landing-hero-title {
   font-size: clamp(38px, 6vw, 64px);
   font-weight: 800;
